@@ -142,7 +142,7 @@ public:
     // Algorithme DFS pour générer un chemin continu
     bool dfsContinuousPath(int x, int y, const std::string& path, int index) {
         if (index >= path.length()) {
-            grid[x][y].isEnd = true;
+            grid[x][y].isEnd = true; // Marquer la fin du chemin
             return true;
         }
 
@@ -160,16 +160,27 @@ public:
             int newX = x + dir.first;
             int newY = y + dir.second;
 
-            // Vérifier si la nouvelle position est valide (dans les limites de la grille)
-            if (newX >= 0 && newX < rows && newY >= 0 && newY < cols &&
+            // Vérifier si la nouvelle position est valide (dans les limites de la grille et ne touche pas les bords)
+            if (newX > 0 && newX < rows - 1 && newY > 0 && newY < cols - 1 &&
                 !grid[newX][newY].isBlack && !grid[newX][newY].isStart && !grid[newX][newY].isEnd) {
-                grid[newX][newY].letter = path[index];
-                validPath.push_back(sf::Vector2i(newX, newY));
-                if (dfsContinuousPath(newX, newY, path, index + 1)) {
-                    return true;
+                // Vérifier que la case n'est pas déjà utilisée dans le chemin
+                bool isAlreadyInPath = false;
+                for (const auto& pos : validPath) {
+                    if (pos.x == newX && pos.y == newY) {
+                        isAlreadyInPath = true;
+                        break;
+                    }
                 }
-                validPath.pop_back(); // Backtracking
-                grid[newX][newY].letter = '\0'; // Réinitialiser la case
+
+                if (!isAlreadyInPath) {
+                    grid[newX][newY].letter = path[index];
+                    validPath.push_back(sf::Vector2i(newX, newY));
+                    if (dfsContinuousPath(newX, newY, path, index + 1)) {
+                        return true;
+                    }
+                    validPath.pop_back(); // Backtracking
+                    grid[newX][newY].letter = '\0'; // Réinitialiser la case
+                }
             }
         }
 
@@ -182,8 +193,140 @@ public:
     }
 };
 
+// Fonction pour afficher la fenêtre de félicitations
+void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, int score, int timeElapsed) {
+    const unsigned int windowWidth = 800;
+    const unsigned int windowHeight = 600;
+
+    // Créer une nouvelle fenêtre pour les félicitations
+    sf::RenderWindow congratsWindow(sf::VideoMode(windowWidth, windowHeight), "Félicitations !");
+
+    // Texte de félicitations
+    sf::Text congratsText;
+    congratsText.setFont(font);
+    congratsText.setString("Félicitations !");
+    congratsText.setCharacterSize(50);
+    congratsText.setFillColor(sf::Color::White);
+    congratsText.setStyle(sf::Text::Bold);
+    congratsText.setPosition(
+        static_cast<float>(windowWidth) / 2 - congratsText.getLocalBounds().width / 2, // Centré horizontalement
+        100 // Position verticale
+    );
+
+    // Texte du score
+    sf::Text scoreText;
+    scoreText.setFont(font);
+    scoreText.setString("Score: " + std::to_string(score));
+    scoreText.setCharacterSize(30);
+    scoreText.setFillColor(sf::Color::White);
+    scoreText.setPosition(
+        static_cast<float>(windowWidth) / 2 - scoreText.getLocalBounds().width / 2, // Centré horizontalement
+        200 // Position verticale
+    );
+
+    // Texte du temps écoulé
+    sf::Text timeText;
+    timeText.setFont(font);
+    timeText.setString("Temps écoulé: " + std::to_string(timeElapsed) + " secondes");
+    timeText.setCharacterSize(30);
+    timeText.setFillColor(sf::Color::White);
+    timeText.setPosition(
+        static_cast<float>(windowWidth) / 2 - timeText.getLocalBounds().width / 2, // Centré horizontalement
+        250 // Position verticale
+    );
+
+    // Bouton "Recommencer"
+    sf::RectangleShape restartButton(sf::Vector2f(200, 50));
+    restartButton.setFillColor(sf::Color(70, 130, 180)); // Couleur bleue
+    restartButton.setPosition(
+        static_cast<float>(windowWidth) / 2 - restartButton.getSize().x / 2, // Centré horizontalement
+        350 // Position verticale
+    );
+
+    sf::Text restartButtonText;
+    restartButtonText.setFont(font);
+    restartButtonText.setString("Recommencer");
+    restartButtonText.setCharacterSize(24);
+    restartButtonText.setFillColor(sf::Color::White);
+    restartButtonText.setPosition(
+        restartButton.getPosition().x + 30,
+        restartButton.getPosition().y + 10
+    );
+
+    // Bouton "Menu Principal"
+    sf::RectangleShape mainMenuButton(sf::Vector2f(200, 50));
+    mainMenuButton.setFillColor(sf::Color(70, 130, 180)); // Couleur bleue
+    mainMenuButton.setPosition(
+        static_cast<float>(windowWidth) / 2 - mainMenuButton.getSize().x / 2, // Centré horizontalement
+        450 // Position verticale
+    );
+
+    sf::Text mainMenuButtonText;
+    mainMenuButtonText.setFont(font);
+    mainMenuButtonText.setString("Menu Principal");
+    mainMenuButtonText.setCharacterSize(24);
+    mainMenuButtonText.setFillColor(sf::Color::White);
+    mainMenuButtonText.setPosition(
+        mainMenuButton.getPosition().x + 20,
+        mainMenuButton.getPosition().y + 10
+    );
+
+    // Boucle principale de la fenêtre de félicitations
+    while (congratsWindow.isOpen()) {
+        sf::Event event;
+        while (congratsWindow.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                congratsWindow.close();
+            }
+
+            // Gestion des clics sur les boutons
+            if (event.type == sf::Event::MouseButtonPressed) {
+                sf::Vector2f mousePos = congratsWindow.mapPixelToCoords(sf::Mouse::getPosition(congratsWindow));
+
+                // Bouton "Recommencer"
+                if (restartButton.getGlobalBounds().contains(mousePos)) {
+                    congratsWindow.close();
+                    return; // Retourner au jeu pour recommencer
+                }
+
+                // Bouton "Menu Principal"
+                if (mainMenuButton.getGlobalBounds().contains(mousePos)) {
+                    congratsWindow.close();
+                    return; // Retourner au menu principal
+                }
+            }
+        }
+
+        // Effacer l'écran avec un dégradé de couleurs
+        sf::VertexArray background(sf::Quads, 4);
+        background[0].position = sf::Vector2f(0, 0);
+        background[1].position = sf::Vector2f(static_cast<float>(windowWidth), 0);
+        background[2].position = sf::Vector2f(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
+        background[3].position = sf::Vector2f(0, static_cast<float>(windowHeight));
+        background[0].color = sf::Color(100, 150, 200);
+        background[1].color = sf::Color(100, 150, 200);
+        background[2].color = sf::Color(200, 100, 150);
+        background[3].color = sf::Color(200, 100, 150);
+        congratsWindow.draw(background);
+
+        // Dessiner les textes
+        congratsWindow.draw(congratsText);
+        congratsWindow.draw(scoreText);
+        congratsWindow.draw(timeText);
+
+        // Dessiner les boutons
+        congratsWindow.draw(restartButton);
+        congratsWindow.draw(restartButtonText);
+        congratsWindow.draw(mainMenuButton);
+        congratsWindow.draw(mainMenuButtonText);
+
+        // Afficher à l'écran
+        congratsWindow.display();
+    }
+}
+
 // Fonction pour afficher la deuxième fenêtre (matrice)
-void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font, int& score, const std::vector<std::string>& themeWords) {
+void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font, int& score, const std::vector<std::string>& themeWords, sf::Clock& gameClock, std::unordered_set<std::string>& foundWords) {
     const int gridSize = grid.getRows();
     const float cellSize = 50.0f;
     const float marginX = (window.getSize().x - gridSize * cellSize) / 2; // Centrer horizontalement
@@ -274,6 +417,13 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
     scoreText.setFillColor(sf::Color::White);
     scoreText.setPosition(marginX, marginY + gridSize * cellSize + 80);
 
+    // Texte du minuteur
+    sf::Text timerText;
+    timerText.setFont(font);
+    timerText.setCharacterSize(24);
+    timerText.setFillColor(sf::Color::White);
+    timerText.setPosition(window.getSize().x - 150, 20);
+
     // Variables pour gérer la sélection des lettres
     std::vector<sf::Vector2i> selectedLetters;
     std::string currentWord;
@@ -317,6 +467,25 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                     }
 
                     if (isValid) {
+                        // Vérifier si le mot a déjà été trouvé
+                        if (foundWords.find(upperCurrentWord) == foundWords.end()) {
+                            foundWords.insert(upperCurrentWord); // Ajouter le mot à la liste des mots trouvés
+
+                            // Calculer le score selon la nouvelle formule
+                            int wordLength = upperCurrentWord.length();
+                            sf::Time elapsed = gameClock.getElapsedTime();
+                            int timeBonus = static_cast<int>(elapsed.asSeconds()); // Bonus de temps
+                            int hintPenalty = hintIndex * 2; // Pénalité pour les indices utilisés
+                            int wordScore = (wordLength * 3) + timeBonus - hintPenalty; // Ajouter le bonus de temps
+
+                            // Assurer que le score ne devienne pas négatif
+                            wordScore = std::max(wordScore, 0);
+
+                            // Ajouter le score au score total
+                            score += wordScore;
+                            scoreText.setString("Score: " + std::to_string(score));
+                        }
+
                         // Colorer les cases sélectionnées en vert
                         for (const auto& pos : selectedLetters) {
                             grid.getNode(pos.x, pos.y)->isSelected = false;
@@ -324,8 +493,6 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                         }
                         selectedLetters.clear();
                         currentWord.clear();
-                        score += 10; // Augmenter le score
-                        scoreText.setString("Score: " + std::to_string(score));
                         wordText.setString(""); // Effacer le mot affiché
                     }
                     else {
@@ -434,6 +601,19 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
         // Dessiner le score
         window.draw(scoreText);
 
+        // Dessiner le minuteur
+        sf::Time elapsed = gameClock.getElapsedTime();
+        int seconds = static_cast<int>(elapsed.asSeconds());
+        timerText.setString("Temps: " + std::to_string(seconds) + "s");
+        window.draw(timerText);
+
+        // Vérifier si tous les mots ont été trouvés
+        if (foundWords.size() == themeWords.size()) {
+            int timeElapsed = static_cast<int>(gameClock.getElapsedTime().asSeconds());
+            showCongratulationWindow(window, font, score, timeElapsed);
+            return; // Retourner au menu principal ou recommencer
+        }
+
         // Afficher à l'écran
         window.display();
     }
@@ -446,18 +626,6 @@ void drawThemeWords(sf::RenderWindow& window, const sf::Font& font, const std::v
     themeTitle.setCharacterSize(24);
     themeTitle.setFillColor(sf::Color::White);
     themeTitle.setPosition(x, y);
-    themeTitle.setString("Mots du thème:");
-    window.draw(themeTitle);
-
-    for (size_t i = 0; i < words.size(); ++i) {
-        sf::Text wordText;
-        wordText.setFont(font);
-        wordText.setCharacterSize(20);
-        wordText.setFillColor(sf::Color::White);
-        wordText.setPosition(x, y + 30 + i * 25);
-        wordText.setString(words[i]);
-        window.draw(wordText);
-    }
 }
 
 int main() {
@@ -656,6 +824,13 @@ int main() {
     // Score initial
     int score = 0;
 
+    // Minuteur
+    sf::Clock gameClock;
+    bool gameStarted = false;
+
+    // Liste des mots déjà trouvés
+    std::unordered_set<std::string> foundWords;
+
     // Boucle principale
     while (window.isOpen()) {
         sf::Event event;
@@ -739,9 +914,14 @@ int main() {
                 // Bouton "Commencer"
                 if (startButton.getGlobalBounds().contains(mousePos)) {
                     if (!selectedTheme.empty() && blackCellProbability >= 0.0f) {
-                        grid.fillWithTheme(selectedTheme, blackCellProbability); // Remplir la grille avec le thème et la difficulté choisis
-                        grid.generateContinuousPath(selectedTheme); // Générer un chemin continu avec 4 mots du thème
-                        showMatrixWindow(window, grid, font, score, selectedTheme); // Afficher la deuxième fenêtre (matrice)
+                        gameClock.restart(); // Réinitialiser le minuteur
+                        gameStarted = true; // Démarrer le jeu
+                        foundWords.clear(); // Réinitialiser la liste des mots trouvés
+                        score = 0; // Réinitialiser le score
+
+                        grid.fillWithTheme(selectedTheme, blackCellProbability);
+                        grid.generateContinuousPath(selectedTheme);
+                        showMatrixWindow(window, grid, font, score, selectedTheme, gameClock, foundWords);
                         showError = false; // Réinitialiser l'erreur
                     }
                     else {
