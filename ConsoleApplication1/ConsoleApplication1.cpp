@@ -16,6 +16,61 @@ int randomInt(int min, int max) {
     return distrib(gen);
 }
 
+// Structure pour représenter une bulle
+struct Bubble {
+    sf::CircleShape shape;
+    float speedX, speedY;
+    float scaleSpeed;
+};
+
+// Créer des bulles
+std::vector<Bubble> createBubbles(int count, const sf::Vector2u& windowSize) {
+    std::vector<Bubble> bubbles;
+    for (int i = 0; i < count; ++i) {
+        Bubble bubble;
+        float radius = static_cast<float>(randomInt(10, 50));
+        bubble.shape.setRadius(radius);
+        bubble.shape.setFillColor(sf::Color(255, 255, 255, randomInt(50, 150))); // Couleur semi-transparente
+        bubble.shape.setPosition(
+            static_cast<float>(randomInt(0, windowSize.x)),
+            static_cast<float>(randomInt(0, windowSize.y))
+        );
+        bubble.speedX = static_cast<float>(randomInt(-50, 50)) / 100.0f;
+        bubble.speedY = static_cast<float>(randomInt(-50, 50)) / 100.0f;
+        bubble.scaleSpeed = static_cast<float>(randomInt(1, 10)) / 1000.0f;
+        bubbles.push_back(bubble);
+    }
+    return bubbles;
+}
+
+// Mettre à jour les bulles
+void updateBubbles(std::vector<Bubble>& bubbles, const sf::Vector2u& windowSize, float deltaTime) {
+    for (auto& bubble : bubbles) {
+        // Mettre à jour la position de la bulle en fonction de sa vitesse
+        bubble.shape.move(bubble.speedX * deltaTime * 60, bubble.speedY * deltaTime * 60);
+
+        // Reboucler les bulles qui sortent du cadre
+        sf::Vector2f position = bubble.shape.getPosition();
+        float radius = bubble.shape.getRadius();
+
+        if (position.x + radius < 0) {
+            position.x = windowSize.x + radius; // Réapparaît à droite
+        }
+        else if (position.x - radius > windowSize.x) {
+            position.x = -radius; // Réapparaît à gauche
+        }
+
+        if (position.y + radius < 0) {
+            position.y = windowSize.y + radius; // Réapparaît en bas
+        }
+        else if (position.y - radius > windowSize.y) {
+            position.y = -radius; // Réapparaît en haut
+        }
+
+        bubble.shape.setPosition(position);
+    }
+}
+
 // Structure pour représenter une case dans la grille
 struct Node {
     char letter = '\0'; // Lettre de la case
@@ -344,7 +399,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                 cell.setFillColor(sf::Color::Yellow); // Case sélectionnée
             }
             else if (grid.getNode(x, y)->isStart) {
-                cell.setFillColor(sf::Color::Green); // Case de départ en vert
+                cell.setFillColor(sf::Color::Cyan); // Case de départ en vert
             }
             else if (grid.getNode(x, y)->isEnd) {
                 cell.setFillColor(sf::Color(204, 153, 255)); // Case d'arrivée en violet pastel
@@ -363,7 +418,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
     }
 
     // Bouton "Retour"
-    sf::RectangleShape backButton(sf::Vector2f(150, 50));
+    sf::RectangleShape backButton(sf::Vector2f(100, 50));
     backButton.setFillColor(sf::Color(70, 130, 180)); // Couleur bleue
     backButton.setPosition(20, 20); // Position en haut à gauche
 
@@ -372,7 +427,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
     backButtonText.setString("Retour");
     backButtonText.setCharacterSize(24);
     backButtonText.setFillColor(sf::Color::White);
-    backButtonText.setPosition(backButton.getPosition().x + 40, backButton.getPosition().y + 10);
+    backButtonText.setPosition(backButton.getPosition().x + 15, backButton.getPosition().y + 10);
 
     // Rectangle pour afficher le mot formé
     sf::RectangleShape wordBox(sf::Vector2f(300, 50));
@@ -431,6 +486,9 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
     // Variable pour gérer l'indice de la lettre suivante à afficher avec le hint
     int hintIndex = 0;
 
+    // Variable pour stocker le temps de validation du dernier mot
+    sf::Time lastWordValidationTime = sf::Time::Zero;
+
     while (window.isOpen()) {
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -473,10 +531,20 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
 
                             // Calculer le score selon la nouvelle formule
                             int wordLength = upperCurrentWord.length();
-                            sf::Time elapsed = gameClock.getElapsedTime();
-                            int timeBonus = static_cast<int>(elapsed.asSeconds()); // Bonus de temps
-                            int hintPenalty = hintIndex * 2; // Pénalité pour les indices utilisés
-                            int wordScore = (wordLength * 3) + timeBonus - hintPenalty; // Ajouter le bonus de temps
+                            sf::Time currentTime = gameClock.getElapsedTime();
+                            sf::Time timeSinceLastWord = currentTime - lastWordValidationTime;
+
+                            // Calculer le bonus de temps
+                            int timeBonus = 0;
+                            if (timeSinceLastWord.asSeconds() <= 20) {
+                                timeBonus = 20 - static_cast<int>(timeSinceLastWord.asSeconds());
+                            }
+
+                            // Pénalité pour les indices utilisés
+                            int hintPenalty = hintIndex * 2;
+
+                            // Calculer le score du mot
+                            int wordScore = (wordLength * 3) + timeBonus - hintPenalty;
 
                             // Assurer que le score ne devienne pas négatif
                             wordScore = std::max(wordScore, 0);
@@ -484,6 +552,9 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                             // Ajouter le score au score total
                             score += wordScore;
                             scoreText.setString("Score: " + std::to_string(score));
+
+                            // Mettre à jour le temps de validation du dernier mot
+                            lastWordValidationTime = currentTime;
                         }
 
                         // Colorer les cases sélectionnées en vert
@@ -557,7 +628,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                 cells[i].setFillColor(sf::Color::Black); // Case noire
             }
             else if (grid.getNode(x, y)->isStart) {
-                cells[i].setFillColor(sf::Color::Green); // Case de départ en vert
+                cells[i].setFillColor(sf::Color::Cyan); // Case de départ en vert
             }
             else if (grid.getNode(x, y)->isEnd) {
                 cells[i].setFillColor(sf::Color(204, 153, 255)); // Case d'arrivée en violet pastel
@@ -831,6 +902,12 @@ int main() {
     // Liste des mots déjà trouvés
     std::unordered_set<std::string> foundWords;
 
+    // Créer les bulles
+    std::vector<Bubble> bubbles = createBubbles(50, window.getSize());
+
+    // Minuteur pour le deltaTime
+    sf::Clock deltaClock;
+
     // Boucle principale
     while (window.isOpen()) {
         sf::Event event;
@@ -886,17 +963,17 @@ int main() {
                 // Sélection d'une difficulté
                 if (showDifficultyOptions) {
                     if (easyText.getGlobalBounds().contains(mousePos)) {
-                        blackCellProbability = 0.1f; // 10% de cases noires
+                        blackCellProbability = 0.15f; // 10% de cases noires
                         selectedDifficultyName = "Facile"; // Mettre à jour le nom de la difficulté
                         showDifficultyOptions = false;
                     }
                     else if (mediumText.getGlobalBounds().contains(mousePos)) {
-                        blackCellProbability = 0.3f; // 30% de cases noires
+                        blackCellProbability = 0.1f; // 30% de cases noires
                         selectedDifficultyName = "Moyen"; // Mettre à jour le nom de la difficulté
                         showDifficultyOptions = false;
                     }
                     else if (hardText.getGlobalBounds().contains(mousePos)) {
-                        blackCellProbability = 0.5f; // 50% de cases noires
+                        blackCellProbability = 0.05f; // 50% de cases noires
                         selectedDifficultyName = "Difficile"; // Mettre à jour le nom de la difficulté
                         showDifficultyOptions = false;
                     }
@@ -959,6 +1036,12 @@ int main() {
             }
         }
 
+        // Calculer le deltaTime
+        float deltaTime = deltaClock.restart().asSeconds();
+
+        // Mettre à jour les bulles
+        updateBubbles(bubbles, window.getSize(), deltaTime);
+
         // Effacer l'écran avec un dégradé de couleurs
         sf::VertexArray background(sf::Quads, 4);
         background[0].position = sf::Vector2f(0, 0);
@@ -970,6 +1053,11 @@ int main() {
         background[2].color = backgroundColorEnd;
         background[3].color = backgroundColorEnd;
         window.draw(background);
+
+        // Dessiner les bulles
+        for (const auto& bubble : bubbles) {
+            window.draw(bubble.shape);
+        }
 
         // Dessiner la phrase de bienvenue
         window.draw(welcomeText);
