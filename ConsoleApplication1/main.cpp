@@ -7,255 +7,14 @@
 #include <unordered_set>
 #include <stack>
 #include <queue>
-
-// Fonction pour générer un nombre aléatoire entre min et max
-int randomInt(int min, int max) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distrib(min, max);
-    return distrib(gen);
-}
-
-// Structure pour représenter une bulle
-struct Bubble {
-    sf::CircleShape shape;
-    float speedX, speedY;
-    float scaleSpeed;
-};
-
-// Créer des bulles
-std::vector<Bubble> createBubbles(int count, const sf::Vector2u& windowSize) {
-    std::vector<Bubble> bubbles;
-    for (int i = 0; i < count; ++i) {
-        Bubble bubble;
-        float radius = static_cast<float>(randomInt(10, 50));
-        bubble.shape.setRadius(radius);
-        bubble.shape.setFillColor(sf::Color(255, 255, 255, randomInt(50, 150))); // Couleur semi-transparente
-        bubble.shape.setPosition(
-            static_cast<float>(randomInt(0, windowSize.x)),
-            static_cast<float>(randomInt(0, windowSize.y))
-        );
-        bubble.speedX = static_cast<float>(randomInt(-50, 50)) / 100.0f;
-        bubble.speedY = static_cast<float>(randomInt(-50, 50)) / 100.0f;
-        bubble.scaleSpeed = static_cast<float>(randomInt(1, 10)) / 1000.0f;
-        bubbles.push_back(bubble);
-    }
-    return bubbles;
-}
-
-// Mettre à jour les bulles
-void updateBubbles(std::vector<Bubble>& bubbles, const sf::Vector2u& windowSize, float deltaTime) {
-    for (auto& bubble : bubbles) {
-        // Mettre à jour la position de la bulle en fonction de sa vitesse
-        bubble.shape.move(bubble.speedX * deltaTime * 60, bubble.speedY * deltaTime * 60);
-
-        // Reboucler les bulles qui sortent du cadre
-        sf::Vector2f position = bubble.shape.getPosition();
-        float radius = bubble.shape.getRadius();
-
-        if (position.x + radius < 0) {
-            position.x = windowSize.x + radius; // Réapparaît à droite
-        }
-        else if (position.x - radius > windowSize.x) {
-            position.x = -radius; // Réapparaît à gauche
-        }
-
-        if (position.y + radius < 0) {
-            position.y = windowSize.y + radius; // Réapparaît en bas
-        }
-        else if (position.y - radius > windowSize.y) {
-            position.y = -radius; // Réapparaît en haut
-        }
-
-        bubble.shape.setPosition(position);
-    }
-}
-
-// Structure pour représenter une case dans la grille
-struct Node {
-    char letter = '\0'; // Lettre de la case
-    bool isBlack = false; // Si la case est noire (lettre inutile)
-    bool isSelected = false; // Si la case est sélectionnée
-    bool isStart = false; // Si la case est le début d'un mot
-    bool isEnd = false; // Si la case est la fin d'un mot
-    bool isHint = false; // Si la case est un indice
-};
-
-// Classe pour représenter la grille
-class Grid {
-private:
-    int rows, cols;
-    std::vector<std::vector<Node>> grid;
-    std::vector<sf::Vector2i> validPath; // Stocke le chemin valide pour les indices
-
-public:
-    Grid(int r, int c) : rows(r), cols(c), grid(r, std::vector<Node>(c)) {}
-
-    // Obtenir un nœud spécifique
-    Node* getNode(int x, int y) {
-        return &grid[x][y];
-    }
-
-    int getRows() const { return rows; }
-    int getCols() const { return cols; }
-
-    // Remplir la grille avec des lettres aléatoires
-    void fillRandom() {
-        for (int i = 0; i < rows; ++i) {
-            for (int j = 0; j < cols; ++j) {
-                grid[i][j].letter = 'A' + randomInt(0, 25); // Lettre aléatoire
-            }
-        }
-    }
-
-    // Remplir la grille avec les lettres d'un thème spécifique
-    void fillWithTheme(const std::vector<std::string>& words, float blackCellProbability) {
-        // Récupérer toutes les lettres des mots du thème
-        std::string allLetters;
-        for (const auto& word : words) {
-            allLetters += word;
-        }
-
-        // Convertir en majuscules
-        for (char& c : allLetters) {
-            c = toupper(c);
-        }
-
-        // Mélanger les lettres pour un placement aléatoire
-        std::random_shuffle(allLetters.begin(), allLetters.end());
-
-        // Remplir la grille avec les lettres du thème
-        int index = 0;
-        for (int i = 0; i < rows; ++i) {
-            for (int j = 0; j < cols; ++j) {
-                if (index < allLetters.size()) {
-                    grid[i][j].letter = allLetters[index];
-                    grid[i][j].isBlack = false; // Case utile
-                    index++;
-                }
-                else {
-                    // Remplir le reste avec des lettres aléatoires ou des cases noires
-                    if (static_cast<float>(randomInt(0, 100)) / 100 < blackCellProbability) {
-                        grid[i][j].isBlack = true; // Case noire (lettre inutile)
-                    }
-                    else {
-                        grid[i][j].letter = 'A' + randomInt(0, 25); // Lettre aléatoire
-                        grid[i][j].isBlack = false; // Case utile
-                    }
-                }
-            }
-        }
-    }
-
-    // Générer un chemin continu pour les mots du thème
-    void generateContinuousPath(const std::vector<std::string>& themeWords) {
-        validPath.clear(); // Réinitialiser le chemin valide
-
-        // Concaténer les mots pour former un chemin continu
-        std::string continuousPath;
-        for (const auto& word : themeWords) {
-            continuousPath += word;
-        }
-
-        // Vérifier si le chemin est trop long pour la grille
-        if (continuousPath.length() > rows * cols) {
-            std::cerr << "Erreur: Le chemin est trop long pour la grille." << std::endl;
-            return;
-        }
-
-        // Limite de tentatives pour éviter une boucle infinie
-        int maxAttempts = 100;
-        int attempts = 0;
-
-        while (attempts < maxAttempts) {
-            // Choisir une position de départ aléatoire
-            int startX = randomInt(0, rows - 1);
-            int startY = randomInt(0, cols - 1);
-            grid[startX][startY].isStart = true;
-            grid[startX][startY].letter = continuousPath[0];
-            validPath.push_back(sf::Vector2i(startX, startY));
-
-            // Utiliser DFS pour générer un chemin continu
-            if (dfsContinuousPath(startX, startY, continuousPath, 1)) {
-                return; // Chemin trouvé
-            }
-
-            // Réinitialiser la grille et réessayer
-            for (auto& row : grid) {
-                for (auto& node : row) {
-                    node.isStart = false;
-                    node.isEnd = false;
-                }
-            }
-            validPath.clear();
-            attempts++;
-        }
-
-        std::cerr << "Erreur: Impossible de générer un chemin valide après " << maxAttempts << " tentatives." << std::endl;
-    }
-
-    // Algorithme DFS pour générer un chemin continu
-    bool dfsContinuousPath(int x, int y, const std::string& path, int index) {
-        if (index >= path.length()) {
-            grid[x][y].isEnd = true; // Marquer la fin du chemin
-            return true;
-        }
-
-        // Liste des directions possibles (8 directions)
-        std::vector<std::pair<int, int>> directions = {
-            {-1, -1}, {-1, 0}, {-1, 1},
-            {0, -1},          {0, 1},
-            {1, -1},  {1, 0}, {1, 1}
-        };
-
-        // Mélanger les directions pour un choix aléatoire
-        std::random_shuffle(directions.begin(), directions.end());
-
-        for (const auto& dir : directions) {
-            int newX = x + dir.first;
-            int newY = y + dir.second;
-
-            // Vérifier si la nouvelle position est valide (dans les limites de la grille et ne touche pas les bords)
-            if (newX > 0 && newX < rows - 1 && newY > 0 && newY < cols - 1 &&
-                !grid[newX][newY].isBlack && !grid[newX][newY].isStart && !grid[newX][newY].isEnd) {
-                // Vérifier que la case n'est pas déjà utilisée dans le chemin
-                bool isAlreadyInPath = false;
-                for (const auto& pos : validPath) {
-                    if (pos.x == newX && pos.y == newY) {
-                        isAlreadyInPath = true;
-                        break;
-                    }
-                }
-
-                if (!isAlreadyInPath) {
-                    grid[newX][newY].letter = path[index];
-                    validPath.push_back(sf::Vector2i(newX, newY));
-                    if (dfsContinuousPath(newX, newY, path, index + 1)) {
-                        return true;
-                    }
-                    validPath.pop_back(); // Backtracking
-                    grid[newX][newY].letter = '\0'; // Réinitialiser la case
-                }
-            }
-        }
-
-        return false;
-    }
-
-    // Obtenir le chemin valide pour les indices
-    const std::vector<sf::Vector2i>& getValidPath() const {
-        return validPath;
-    }
-};
-
+#include "Grid.cpp"
+#include "Bubbles.hpp"
 // Fonction pour afficher la fenêtre de félicitations
 void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, int score, int timeElapsed) {
     const unsigned int windowWidth = 800;
     const unsigned int windowHeight = 600;
-
     // Créer une nouvelle fenêtre pour les félicitations
     sf::RenderWindow congratsWindow(sf::VideoMode(windowWidth, windowHeight), "Félicitations !");
-
     // Texte de félicitations
     sf::Text congratsText;
     congratsText.setFont(font);
@@ -267,7 +26,6 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
         static_cast<float>(windowWidth) / 2 - congratsText.getLocalBounds().width / 2, // Centré horizontalement
         100 // Position verticale
     );
-
     // Texte du score
     sf::Text scoreText;
     scoreText.setFont(font);
@@ -278,7 +36,6 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
         static_cast<float>(windowWidth) / 2 - scoreText.getLocalBounds().width / 2, // Centré horizontalement
         200 // Position verticale
     );
-
     // Texte du temps écoulé
     sf::Text timeText;
     timeText.setFont(font);
@@ -289,7 +46,6 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
         static_cast<float>(windowWidth) / 2 - timeText.getLocalBounds().width / 2, // Centré horizontalement
         250 // Position verticale
     );
-
     // Bouton "Recommencer"
     sf::RectangleShape restartButton(sf::Vector2f(200, 50));
     restartButton.setFillColor(sf::Color(70, 130, 180)); // Couleur bleue
@@ -297,7 +53,6 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
         static_cast<float>(windowWidth) / 2 - restartButton.getSize().x / 2, // Centré horizontalement
         350 // Position verticale
     );
-
     sf::Text restartButtonText;
     restartButtonText.setFont(font);
     restartButtonText.setString("Recommencer");
@@ -307,7 +62,6 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
         restartButton.getPosition().x + 30,
         restartButton.getPosition().y + 10
     );
-
     // Bouton "Menu Principal"
     sf::RectangleShape mainMenuButton(sf::Vector2f(200, 50));
     mainMenuButton.setFillColor(sf::Color(70, 130, 180)); // Couleur bleue
@@ -315,7 +69,6 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
         static_cast<float>(windowWidth) / 2 - mainMenuButton.getSize().x / 2, // Centré horizontalement
         450 // Position verticale
     );
-
     sf::Text mainMenuButtonText;
     mainMenuButtonText.setFont(font);
     mainMenuButtonText.setString("Menu Principal");
@@ -325,7 +78,6 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
         mainMenuButton.getPosition().x + 20,
         mainMenuButton.getPosition().y + 10
     );
-
     // Boucle principale de la fenêtre de félicitations
     while (congratsWindow.isOpen()) {
         sf::Event event;
@@ -333,17 +85,14 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
             if (event.type == sf::Event::Closed) {
                 congratsWindow.close();
             }
-
             // Gestion des clics sur les boutons
             if (event.type == sf::Event::MouseButtonPressed) {
                 sf::Vector2f mousePos = congratsWindow.mapPixelToCoords(sf::Mouse::getPosition(congratsWindow));
-
                 // Bouton "Recommencer"
                 if (restartButton.getGlobalBounds().contains(mousePos)) {
                     congratsWindow.close();
                     return; // Retourner au jeu pour recommencer
                 }
-
                 // Bouton "Menu Principal"
                 if (mainMenuButton.getGlobalBounds().contains(mousePos)) {
                     congratsWindow.close();
@@ -351,7 +100,6 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
                 }
             }
         }
-
         // Effacer l'écran avec un dégradé de couleurs
         sf::VertexArray background(sf::Quads, 4);
         background[0].position = sf::Vector2f(0, 0);
@@ -363,23 +111,19 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
         background[2].color = sf::Color(200, 100, 150);
         background[3].color = sf::Color(200, 100, 150);
         congratsWindow.draw(background);
-
         // Dessiner les textes
         congratsWindow.draw(congratsText);
         congratsWindow.draw(scoreText);
         congratsWindow.draw(timeText);
-
         // Dessiner les boutons
         congratsWindow.draw(restartButton);
         congratsWindow.draw(restartButtonText);
         congratsWindow.draw(mainMenuButton);
         congratsWindow.draw(mainMenuButtonText);
-
         // Afficher à l'écran
         congratsWindow.display();
     }
 }
-
 // Fonction pour afficher la deuxième fenêtre (matrice)
 void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font, int& score, const std::vector<std::string>& themeWords, sf::Clock& gameClock, std::unordered_set<std::string>& foundWords) {
     const int gridSize = grid.getRows();
@@ -689,7 +433,6 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
         window.display();
     }
 }
-
 // Fonction pour afficher les mots du thème
 void drawThemeWords(sf::RenderWindow& window, const sf::Font& font, const std::vector<std::string>& words, float x, float y) {
     sf::Text themeTitle;
@@ -698,25 +441,19 @@ void drawThemeWords(sf::RenderWindow& window, const sf::Font& font, const std::v
     themeTitle.setFillColor(sf::Color::White);
     themeTitle.setPosition(x, y);
 }
-
 int main() {
     const unsigned int windowWidth = 800;
     const unsigned int windowHeight = 600;
-
-    // Créer la fenêtre
-    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Jeu de Mots");
-
+    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Jeu de Mots");// Créer la fenêtre
     // Charger une police
     sf::Font font;
     if (!font.loadFromFile("Roboto.ttf")) {
         std::cerr << "Erreur: Impossible de charger la police Roboto.ttf" << std::endl;
         return -1;
     }
-
     // Couleurs d'arrière-plan
     sf::Color backgroundColorStart = sf::Color(100, 150, 200); // Début du dégradé
     sf::Color backgroundColorEnd = sf::Color(200, 100, 150);   // Fin du dégradé
-
     // Texte de bienvenue
     sf::Text welcomeText;
     welcomeText.setFont(font);
@@ -728,7 +465,6 @@ int main() {
         static_cast<float>(windowWidth) / 2 - welcomeText.getLocalBounds().width / 2, // Centré horizontalement
         100 // Position verticale
     );
-
     // Boutons
     sf::RectangleShape themeButton(sf::Vector2f(300, 50));
     themeButton.setFillColor(sf::Color(70, 130, 180)); // Couleur bleue
@@ -750,7 +486,6 @@ int main() {
         static_cast<float>(windowWidth) / 2 - startButton.getSize().x / 2, // Centré horizontalement
         450 // Position verticale
     );
-
     // Texte des boutons
     sf::Text themeButtonText;
     themeButtonText.setFont(font);
@@ -761,7 +496,6 @@ int main() {
         themeButton.getPosition().x + 50,
         themeButton.getPosition().y + 10
     );
-
     sf::Text difficultyButtonText;
     difficultyButtonText.setFont(font);
     difficultyButtonText.setString("Choisir la difficulté");
@@ -771,7 +505,6 @@ int main() {
         difficultyButton.getPosition().x + 30,
         difficultyButton.getPosition().y + 10
     );
-
     sf::Text startButtonText;
     startButtonText.setFont(font);
     startButtonText.setString("Commencer");
@@ -781,27 +514,20 @@ int main() {
         startButton.getPosition().x + 90,
         startButton.getPosition().y + 10
     );
-
     // Créer la grille
     Grid grid(10, 10);
-
     // Définir les thèmes
     std::vector<std::string> fruits = { "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue" };
     std::vector<std::string> pays = { "France", "Tunis", "Qatar", "Pero", "Japon", "Canada" };
     std::vector<std::string> prenoms = { "Alice", "Bob", "Charlie", "David", "Eve", "Frank" };
-
     // Variable pour stocker le thème choisi
     std::vector<std::string> selectedTheme;
-
     // Variable pour stocker le nom du thème choisi
     std::string selectedThemeName;
-
     // Variable pour stocker la difficulté choisie
     float blackCellProbability = 0.0f; // Probabilité de cases noires
-
     // Variable pour stocker le nom de la difficulté choisie
     std::string selectedDifficultyName;
-
     // Variables pour gérer l'affichage des options de thème et de difficulté
     bool showThemeOptions = false;
     bool showDifficultyOptions = false;
@@ -812,14 +538,12 @@ int main() {
         static_cast<float>(windowWidth) / 2 - themeOptionsBackground.getSize().x / 2,
         250
     );
-
     sf::RectangleShape difficultyOptionsBackground(sf::Vector2f(300, 150));
     difficultyOptionsBackground.setFillColor(sf::Color(70, 130, 180, 200)); // Fond semi-transparent
     difficultyOptionsBackground.setPosition(
         static_cast<float>(windowWidth) / 2 - difficultyOptionsBackground.getSize().x / 2,
         350
     );
-
     sf::Text fruitsText;
     fruitsText.setFont(font);
     fruitsText.setString("Fruits");
@@ -829,7 +553,6 @@ int main() {
         themeOptionsBackground.getPosition().x + 50,
         themeOptionsBackground.getPosition().y + 20
     );
-
     sf::Text paysText;
     paysText.setFont(font);
     paysText.setString("Pays");
@@ -839,7 +562,6 @@ int main() {
         themeOptionsBackground.getPosition().x + 50,
         themeOptionsBackground.getPosition().y + 60
     );
-
     sf::Text prenomsText;
     prenomsText.setFont(font);
     prenomsText.setString("Prénoms");
@@ -849,7 +571,6 @@ int main() {
         themeOptionsBackground.getPosition().x + 50,
         themeOptionsBackground.getPosition().y + 100
     );
-
     sf::Text easyText;
     easyText.setFont(font);
     easyText.setString("Facile");
@@ -859,7 +580,6 @@ int main() {
         difficultyOptionsBackground.getPosition().x + 50,
         difficultyOptionsBackground.getPosition().y + 20
     );
-
     sf::Text mediumText;
     mediumText.setFont(font);
     mediumText.setString("Moyen");
@@ -869,7 +589,6 @@ int main() {
         difficultyOptionsBackground.getPosition().x + 50,
         difficultyOptionsBackground.getPosition().y + 60
     );
-
     sf::Text hardText;
     hardText.setFont(font);
     hardText.setString("Difficile");
@@ -879,7 +598,6 @@ int main() {
         difficultyOptionsBackground.getPosition().x + 50,
         difficultyOptionsBackground.getPosition().y + 100
     );
-
     // Texte d'erreur
     sf::Text errorText;
     errorText.setFont(font);
@@ -891,22 +609,13 @@ int main() {
         500
     );
     bool showError = false;
-
-    // Score initial
-    int score = 0;
-
+    int score = 0;// Score initial
     // Minuteur
     sf::Clock gameClock;
     bool gameStarted = false;
-
-    // Liste des mots déjà trouvés
-    std::unordered_set<std::string> foundWords;
-
-    // Créer les bulles
-    std::vector<Bubble> bubbles = createBubbles(50, window.getSize());
-
-    // Minuteur pour le deltaTime
-    sf::Clock deltaClock;
+    std::unordered_set<std::string> foundWords;// Liste des mots déjà trouvés
+    std::vector<Bubble> bubbles = createBubbles(50, window.getSize());// Créer les bulles
+    sf::Clock deltaClock; // Minuteur pour le deltaTime
 
     // Boucle principale
     while (window.isOpen()) {
@@ -987,7 +696,6 @@ int main() {
                         );
                     }
                 }
-
                 // Bouton "Commencer"
                 if (startButton.getGlobalBounds().contains(mousePos)) {
                     if (!selectedTheme.empty() && blackCellProbability >= 0.0f) {
@@ -1006,27 +714,23 @@ int main() {
                     }
                 }
             }
-
             // Gestion du hover effect
             if (event.type == sf::Event::MouseMoved) {
                 sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
 
                 // Hover sur le bouton "Choisir un thème"
                 themeButton.setFillColor(themeButton.getGlobalBounds().contains(mousePos) ? sf::Color(100, 150, 200) : sf::Color(70, 130, 180));
-
                 // Hover sur le bouton "Choisir la difficulté"
                 difficultyButton.setFillColor(difficultyButton.getGlobalBounds().contains(mousePos) ? sf::Color(100, 150, 200) : sf::Color(70, 130, 180));
 
                 // Hover sur le bouton "Commencer"
                 startButton.setFillColor(startButton.getGlobalBounds().contains(mousePos) ? sf::Color(100, 150, 200) : sf::Color(70, 130, 180));
-
                 // Hover sur les options de thème
                 if (showThemeOptions) {
                     fruitsText.setFillColor(fruitsText.getGlobalBounds().contains(mousePos) ? sf::Color(200, 200, 200) : sf::Color::White);
                     paysText.setFillColor(paysText.getGlobalBounds().contains(mousePos) ? sf::Color(200, 200, 200) : sf::Color::White);
                     prenomsText.setFillColor(prenomsText.getGlobalBounds().contains(mousePos) ? sf::Color(200, 200, 200) : sf::Color::White);
                 }
-
                 // Hover sur les options de difficulté
                 if (showDifficultyOptions) {
                     easyText.setFillColor(easyText.getGlobalBounds().contains(mousePos) ? sf::Color(200, 200, 200) : sf::Color::White);
@@ -1035,7 +739,6 @@ int main() {
                 }
             }
         }
-
         // Calculer le deltaTime
         float deltaTime = deltaClock.restart().asSeconds();
 
@@ -1058,10 +761,8 @@ int main() {
         for (const auto& bubble : bubbles) {
             window.draw(bubble.shape);
         }
-
         // Dessiner la phrase de bienvenue
         window.draw(welcomeText);
-
         // Dessiner les boutons
         window.draw(themeButton);
         window.draw(themeButtonText);
@@ -1069,7 +770,6 @@ int main() {
         window.draw(difficultyButtonText);
         window.draw(startButton);
         window.draw(startButtonText);
-
         // Afficher les options de thème si nécessaire
         if (showThemeOptions) {
             window.draw(themeOptionsBackground);
@@ -1077,7 +777,6 @@ int main() {
             window.draw(paysText);
             window.draw(prenomsText);
         }
-
         // Afficher les options de difficulté si nécessaire
         if (showDifficultyOptions) {
             window.draw(difficultyOptionsBackground);
@@ -1085,20 +784,16 @@ int main() {
             window.draw(mediumText);
             window.draw(hardText);
         }
-
         // Afficher les mots du thème si un thème est sélectionné
         if (!selectedTheme.empty()) {
             drawThemeWords(window, font, selectedTheme, 50, 500);
         }
-
         // Afficher l'erreur si nécessaire
         if (showError) {
             window.draw(errorText);
         }
-
         // Afficher à l'écran
         window.display();
     }
-
     return 0;
 }
