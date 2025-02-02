@@ -7,6 +7,7 @@
 #include <iostream>
 #include <random>
 #include <algorithm>
+#include <chrono>
 
 // Structure pour représenter une case dans la grille
 struct Node {
@@ -27,7 +28,7 @@ private:
 
 public:
     Grid(int r, int c);
-
+    std::vector<std::string> selectRandomWords(const std::vector<std::string>& themeWords, int count);
     Node* getNode(int x, int y);
     int getRows() const;
     int getCols() const;
@@ -40,6 +41,9 @@ public:
 
     // Fonction utilitaire pour générer un nombre entier aléatoire
     int randomInt(int min, int max);
+
+    // Fonction pour générer un labyrinthe avec plusieurs chemins
+    void generateMazeWithMultiplePaths();
 };
 
 #endif // GRID_HPP

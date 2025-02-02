@@ -127,7 +127,7 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
 // Fonction pour afficher la deuxième fenêtre (matrice)
 void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font, int& score, const std::vector<std::string>& themeWords, sf::Clock& gameClock, std::unordered_set<std::string>& foundWords) {
     const int gridSize = grid.getRows();
-    const float cellSize = 50.0f;
+    const float cellSize = 25.0f;
     const float marginX = (window.getSize().x - gridSize * cellSize) / 2; // Centrer horizontalement
     const float marginY = (window.getSize().y - gridSize * cellSize) / 2 - 100; // Centrer verticalement
 
@@ -369,7 +369,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                 cells[i].setFillColor(sf::Color::Yellow); // Case sélectionnée
             }
             else if (grid.getNode(x, y)->isBlack) {
-                cells[i].setFillColor(sf::Color::Black); // Case noire
+                cells[i].setFillColor(sf::Color(21, 27, 84)); // Case noire (21, 27, 84)
             }
             else if (grid.getNode(x, y)->isStart) {
                 cells[i].setFillColor(sf::Color::Cyan); // Case de départ en vert
@@ -390,9 +390,9 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                 sf::Text letterText;
                 letterText.setFont(font);
                 letterText.setString(std::string(1, grid.getNode(x, y)->letter));
-                letterText.setCharacterSize(24);
+                letterText.setCharacterSize(18);
                 letterText.setFillColor(sf::Color::Black);
-                letterText.setPosition(cells[i].getPosition().x + 15.0f, cells[i].getPosition().y + 10.0f);
+                letterText.setPosition(cells[i].getPosition().x + 6.0f, cells[i].getPosition().y + 0.0f);
                 window.draw(letterText);
             }
         }
@@ -423,7 +423,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
         window.draw(timerText);
 
         // Vérifier si tous les mots ont été trouvés
-        if (foundWords.size() == themeWords.size()) {
+        if (foundWords.size() == 5) { //if (foundWords.size() == themeWords.size()) {
             int timeElapsed = static_cast<int>(gameClock.getElapsedTime().asSeconds());
             showCongratulationWindow(window, font, score, timeElapsed);
             return; // Retourner au menu principal ou recommencer
@@ -443,7 +443,7 @@ void drawThemeWords(sf::RenderWindow& window, const sf::Font& font, const std::v
 }
 int main() {
     const unsigned int windowWidth = 800;
-    const unsigned int windowHeight = 600;
+    const unsigned int windowHeight = 720;
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Jeu de Mots");// Créer la fenêtre
     // Charger une police
     sf::Font font;
@@ -515,11 +515,11 @@ int main() {
         startButton.getPosition().y + 10
     );
     // Créer la grille
-    Grid grid(10, 10);
+    Grid grid(18, 18);
     // Définir les thèmes
-    std::vector<std::string> fruits = { "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue" };
-    std::vector<std::string> pays = { "France", "Tunis", "Qatar", "Pero", "Japon", "Canada" };
-    std::vector<std::string> prenoms = { "Alice", "Bob", "Charlie", "David", "Eve", "Frank" };
+    std::vector<std::string> fruits = { "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue", "bsal", "besbes", "khorchof", "bousaa" };
+    std::vector<std::string> pays = { "France", "Tunis", "Qatar", "Pero", "Japon", "Canada", "Djibouti", "Cuba" };
+    std::vector<std::string> prenoms = { "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "ahmed", "zeineb", "asma", "saif" };
     // Variable pour stocker le thème choisi
     std::vector<std::string> selectedTheme;
     // Variable pour stocker le nom du thème choisi
