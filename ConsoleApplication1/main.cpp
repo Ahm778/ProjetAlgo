@@ -9,6 +9,7 @@
 #include <queue>
 #include "Grid.cpp"
 #include "Bubbles.hpp"
+
 // Fonction pour afficher la fenêtre de félicitations
 void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, int score, int timeElapsed) {
     const unsigned int windowWidth = 800;
@@ -102,7 +103,7 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
         }
         // Effacer l'écran avec un dégradé de couleurs
         sf::VertexArray background(sf::Quads, 4);
-        background[0].position = sf::Vector2f(0, 0);
+        background[0].position = sf::Vector2f(0.0f, 0.0f);
         background[1].position = sf::Vector2f(static_cast<float>(windowWidth), 0);
         background[2].position = sf::Vector2f(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
         background[3].position = sf::Vector2f(0, static_cast<float>(windowHeight));
@@ -124,16 +125,16 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
         congratsWindow.display();
     }
 }
+
 // Fonction pour afficher la deuxième fenêtre (matrice)
-void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font, int& score, const std::vector<std::string>& themeWords, sf::Clock& gameClock, std::unordered_set<std::string>& foundWords) {
+void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font, int& score, const std::vector<std::string>& themeWords, sf::Clock& gameClock, std::unordered_set<std::string>& foundWords, float cellSize) {
     const int gridSize = grid.getRows();
-    const float cellSize = 25.0f;
     const float marginX = (window.getSize().x - gridSize * cellSize) / 2; // Centrer horizontalement
     const float marginY = (window.getSize().y - gridSize * cellSize) / 2 - 100; // Centrer verticalement
 
     // Création des cases
     std::vector<sf::RectangleShape> cells;
-    for (int y = 0; y < gridSize; ++y) {
+    for (unsigned int y = 0; y < gridSize; ++y) {
         for (int x = 0; x < gridSize; ++x) {
             sf::RectangleShape cell(sf::Vector2f(cellSize, cellSize));
             if (grid.getNode(x, y)->isBlack) {
@@ -362,6 +363,9 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
         window.draw(background);
 
         // Dessiner les cases
+
+
+        // Dessiner les cases
         for (size_t i = 0; i < cells.size(); ++i) {
             int x = static_cast<int>(i) % gridSize;
             int y = static_cast<int>(i) / gridSize;
@@ -444,16 +448,19 @@ void drawThemeWords(sf::RenderWindow& window, const sf::Font& font, const std::v
 int main() {
     const unsigned int windowWidth = 800;
     const unsigned int windowHeight = 720;
-    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Jeu de Mots");// Créer la fenêtre
+    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Jeu de Mots");
+
     // Charger une police
     sf::Font font;
     if (!font.loadFromFile("Roboto.ttf")) {
         std::cerr << "Erreur: Impossible de charger la police Roboto.ttf" << std::endl;
         return -1;
     }
+
     // Couleurs d'arrière-plan
     sf::Color backgroundColorStart = sf::Color(100, 150, 200); // Début du dégradé
     sf::Color backgroundColorEnd = sf::Color(200, 100, 150);   // Fin du dégradé
+
     // Texte de bienvenue
     sf::Text welcomeText;
     welcomeText.setFont(font);
@@ -465,6 +472,7 @@ int main() {
         static_cast<float>(windowWidth) / 2 - welcomeText.getLocalBounds().width / 2, // Centré horizontalement
         100 // Position verticale
     );
+
     // Boutons
     sf::RectangleShape themeButton(sf::Vector2f(300, 50));
     themeButton.setFillColor(sf::Color(70, 130, 180)); // Couleur bleue
@@ -486,6 +494,7 @@ int main() {
         static_cast<float>(windowWidth) / 2 - startButton.getSize().x / 2, // Centré horizontalement
         450 // Position verticale
     );
+
     // Texte des boutons
     sf::Text themeButtonText;
     themeButtonText.setFont(font);
@@ -496,6 +505,7 @@ int main() {
         themeButton.getPosition().x + 50,
         themeButton.getPosition().y + 10
     );
+
     sf::Text difficultyButtonText;
     difficultyButtonText.setFont(font);
     difficultyButtonText.setString("Choisir la difficulté");
@@ -505,6 +515,7 @@ int main() {
         difficultyButton.getPosition().x + 30,
         difficultyButton.getPosition().y + 10
     );
+
     sf::Text startButtonText;
     startButtonText.setFont(font);
     startButtonText.setString("Commencer");
@@ -514,16 +525,23 @@ int main() {
         startButton.getPosition().x + 90,
         startButton.getPosition().y + 10
     );
+
+    // Variables pour stocker le thème choisi
+    std::vector<std::string> selectedTheme;
+    std::string selectedThemeName;
+
+    // Variables pour stocker la difficulté choisie
+    float cellSize = 0.0f;
+    int gridSize = 0;
+    
+
     // Créer la grille
-    Grid grid(18, 18);
+    Grid grid(15, 15);
     // Définir les thèmes
     std::vector<std::string> fruits = { "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue", "bsal", "besbes", "khorchof", "bousaa" };
     std::vector<std::string> pays = { "France", "Tunis", "Qatar", "Pero", "Japon", "Canada", "Djibouti", "Cuba" };
     std::vector<std::string> prenoms = { "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "ahmed", "zeineb", "asma", "saif" };
-    // Variable pour stocker le thème choisi
-    std::vector<std::string> selectedTheme;
-    // Variable pour stocker le nom du thème choisi
-    std::string selectedThemeName;
+   
     // Variable pour stocker la difficulté choisie
     float blackCellProbability = 0.0f; // Probabilité de cases noires
     // Variable pour stocker le nom de la difficulté choisie
@@ -609,12 +627,12 @@ int main() {
         500
     );
     bool showError = false;
-    int score = 0;// Score initial
-    // Minuteur
+
+    int score = 0; // Score initial
     sf::Clock gameClock;
     bool gameStarted = false;
-    std::unordered_set<std::string> foundWords;// Liste des mots déjà trouvés
-    std::vector<Bubble> bubbles = createBubbles(50, window.getSize());// Créer les bulles
+    std::unordered_set<std::string> foundWords; // Liste des mots déjà trouvés
+    std::vector<Bubble> bubbles = createBubbles(50, window.getSize()); // Créer les bulles
     sf::Clock deltaClock; // Minuteur pour le deltaTime
 
     // Boucle principale
@@ -645,17 +663,17 @@ int main() {
                 if (showThemeOptions) {
                     if (fruitsText.getGlobalBounds().contains(mousePos)) {
                         selectedTheme = fruits;
-                        selectedThemeName = "Fruits"; // Mettre à jour le nom du thème
+                        selectedThemeName = "Fruits";
                         showThemeOptions = false;
                     }
                     else if (paysText.getGlobalBounds().contains(mousePos)) {
                         selectedTheme = pays;
-                        selectedThemeName = "Pays"; // Mettre à jour le nom du thème
+                        selectedThemeName = "Pays";
                         showThemeOptions = false;
                     }
                     else if (prenomsText.getGlobalBounds().contains(mousePos)) {
                         selectedTheme = prenoms;
-                        selectedThemeName = "Prénoms"; // Mettre à jour le nom du thème
+                        selectedThemeName = "Prénoms";
                         showThemeOptions = false;
                     }
 
@@ -672,18 +690,21 @@ int main() {
                 // Sélection d'une difficulté
                 if (showDifficultyOptions) {
                     if (easyText.getGlobalBounds().contains(mousePos)) {
-                        blackCellProbability = 0.15f; // 10% de cases noires
-                        selectedDifficultyName = "Facile"; // Mettre à jour le nom de la difficulté
+                        cellSize = 40.0f;
+                        gridSize = 12;
+                        selectedDifficultyName = "Facile";
                         showDifficultyOptions = false;
                     }
                     else if (mediumText.getGlobalBounds().contains(mousePos)) {
-                        blackCellProbability = 0.1f; // 30% de cases noires
-                        selectedDifficultyName = "Moyen"; // Mettre à jour le nom de la difficulté
+                        cellSize = 30.0f;
+                        gridSize = 15;
+                        selectedDifficultyName = "Moyen";
                         showDifficultyOptions = false;
                     }
                     else if (hardText.getGlobalBounds().contains(mousePos)) {
-                        blackCellProbability = 0.05f; // 50% de cases noires
-                        selectedDifficultyName = "Difficile"; // Mettre à jour le nom de la difficulté
+                        cellSize = 25.0f;
+                        gridSize = 18;
+                        selectedDifficultyName = "Difficile";
                         showDifficultyOptions = false;
                     }
 
@@ -696,17 +717,19 @@ int main() {
                         );
                     }
                 }
+
                 // Bouton "Commencer"
                 if (startButton.getGlobalBounds().contains(mousePos)) {
-                    if (!selectedTheme.empty() && blackCellProbability >= 0.0f) {
+                    if (!selectedTheme.empty() && gridSize > 0) {
                         gameClock.restart(); // Réinitialiser le minuteur
                         gameStarted = true; // Démarrer le jeu
                         foundWords.clear(); // Réinitialiser la liste des mots trouvés
                         score = 0; // Réinitialiser le score
 
-                        grid.fillWithTheme(selectedTheme, blackCellProbability);
+                        Grid grid(gridSize, gridSize);
+                        grid.fillWithTheme(selectedTheme, 0.0f); // Pas de cases noires pour l'instant
                         grid.generateContinuousPath(selectedTheme);
-                        showMatrixWindow(window, grid, font, score, selectedTheme, gameClock, foundWords);
+                        showMatrixWindow(window, grid, font, score, selectedTheme, gameClock, foundWords, cellSize);
                         showError = false; // Réinitialiser l'erreur
                     }
                     else {
@@ -714,23 +737,27 @@ int main() {
                     }
                 }
             }
+
             // Gestion du hover effect
             if (event.type == sf::Event::MouseMoved) {
                 sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
 
                 // Hover sur le bouton "Choisir un thème"
                 themeButton.setFillColor(themeButton.getGlobalBounds().contains(mousePos) ? sf::Color(100, 150, 200) : sf::Color(70, 130, 180));
+
                 // Hover sur le bouton "Choisir la difficulté"
                 difficultyButton.setFillColor(difficultyButton.getGlobalBounds().contains(mousePos) ? sf::Color(100, 150, 200) : sf::Color(70, 130, 180));
 
                 // Hover sur le bouton "Commencer"
                 startButton.setFillColor(startButton.getGlobalBounds().contains(mousePos) ? sf::Color(100, 150, 200) : sf::Color(70, 130, 180));
+
                 // Hover sur les options de thème
                 if (showThemeOptions) {
                     fruitsText.setFillColor(fruitsText.getGlobalBounds().contains(mousePos) ? sf::Color(200, 200, 200) : sf::Color::White);
                     paysText.setFillColor(paysText.getGlobalBounds().contains(mousePos) ? sf::Color(200, 200, 200) : sf::Color::White);
                     prenomsText.setFillColor(prenomsText.getGlobalBounds().contains(mousePos) ? sf::Color(200, 200, 200) : sf::Color::White);
                 }
+
                 // Hover sur les options de difficulté
                 if (showDifficultyOptions) {
                     easyText.setFillColor(easyText.getGlobalBounds().contains(mousePos) ? sf::Color(200, 200, 200) : sf::Color::White);
@@ -739,6 +766,7 @@ int main() {
                 }
             }
         }
+
         // Calculer le deltaTime
         float deltaTime = deltaClock.restart().asSeconds();
 
@@ -761,8 +789,10 @@ int main() {
         for (const auto& bubble : bubbles) {
             window.draw(bubble.shape);
         }
+
         // Dessiner la phrase de bienvenue
         window.draw(welcomeText);
+
         // Dessiner les boutons
         window.draw(themeButton);
         window.draw(themeButtonText);
@@ -770,6 +800,7 @@ int main() {
         window.draw(difficultyButtonText);
         window.draw(startButton);
         window.draw(startButtonText);
+
         // Afficher les options de thème si nécessaire
         if (showThemeOptions) {
             window.draw(themeOptionsBackground);
@@ -777,6 +808,7 @@ int main() {
             window.draw(paysText);
             window.draw(prenomsText);
         }
+
         // Afficher les options de difficulté si nécessaire
         if (showDifficultyOptions) {
             window.draw(difficultyOptionsBackground);
@@ -784,16 +816,15 @@ int main() {
             window.draw(mediumText);
             window.draw(hardText);
         }
-        // Afficher les mots du thème si un thème est sélectionné
-        if (!selectedTheme.empty()) {
-            drawThemeWords(window, font, selectedTheme, 50, 500);
-        }
+
         // Afficher l'erreur si nécessaire
         if (showError) {
             window.draw(errorText);
         }
+
         // Afficher à l'écran
         window.display();
     }
+
     return 0;
 }
