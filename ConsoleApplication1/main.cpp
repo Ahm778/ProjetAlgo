@@ -7,13 +7,14 @@
 #include <unordered_set>
 #include <stack>
 #include <queue>
-#include "Grid.cpp"
+
 #include "Bubbles.hpp"
+#include "Grid.cpp"
 
 // Fonction pour afficher la fenêtre de félicitations
 void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, int score, int timeElapsed) {
     const unsigned int windowWidth = 800;
-    const unsigned int windowHeight = 600;
+    const unsigned int windowHeight = 720;
     // Créer une nouvelle fenêtre pour les félicitations
     sf::RenderWindow congratsWindow(sf::VideoMode(windowWidth, windowHeight), "Félicitations !");
     // Texte de félicitations
@@ -300,6 +301,9 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
 
                             // Mettre à jour le temps de validation du dernier mot
                             lastWordValidationTime = currentTime;
+
+                            // Mettre à jour hintIndex pour pointer vers le début du prochain mot
+                            hintIndex += upperCurrentWord.length(); // Avancer hintIndex de la longueur du mot valid
                         }
 
                         // Colorer les cases sélectionnées en vert
@@ -317,14 +321,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                     }
                 }
 
-                // Gestion du clic sur le bouton "Hint"
-                if (hintButton.getGlobalBounds().contains(mousePos)) {
-                    if (hintIndex < grid.getValidPath().size()) {
-                        auto pos = grid.getValidPath()[hintIndex];
-                        grid.getNode(pos.x, pos.y)->isHint = true;
-                        hintIndex++;
-                    }
-                }
+                
 
                 // Gestion du clic sur les cases
                 for (int y = 0; y < gridSize; ++y) {
@@ -533,15 +530,27 @@ int main() {
     // Variables pour stocker la difficulté choisie
     float cellSize = 0.0f;
     int gridSize = 0;
-    
+
 
     // Créer la grille
     Grid grid(15, 15);
     // Définir les thèmes
-    std::vector<std::string> fruits = { "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue", "bsal", "besbes", "khorchof", "bousaa" };
-    std::vector<std::string> pays = { "France", "Tunis", "Qatar", "Pero", "Japon", "Canada", "Djibouti", "Cuba" };
-    std::vector<std::string> prenoms = { "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "ahmed", "zeineb", "asma", "saif" };
-   
+    std::vector<std::string> fruits = {
+    "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue", "Ananas", "Raisin", "Poire", "Cerise",
+    "Abricot", "Myrtille", "Framboise", "Pastèque", "Melon", "Goyave", "Papaye", "Grenade", "Litchi", "Pêche"
+    };
+
+    std::vector<std::string> pays = {
+     "France", "Tunisie", "Qatar", "Pérou", "Japon", "Canada", "Djibouti", "Cuba", "Brésil", "Espagne",
+     "Italie", "Allemagne", "Maroc", "Russie", "Inde", "Chine", "Mexique", "Portugal", "Égypte", "Turquie"
+    };
+
+    std::vector<std::string> prenoms = {
+    "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Ahmed", "Zeineb", "Asma", "Saif",
+    "Hana", "Omar", "Lina", "Youssef", "Rania", "Jules", "Camille", "Nina", "Leo", "Lucas"
+    };
+
+
     // Variable pour stocker la difficulté choisie
     float blackCellProbability = 0.0f; // Probabilité de cases noires
     // Variable pour stocker le nom de la difficulté choisie
@@ -564,7 +573,7 @@ int main() {
     );
     sf::Text fruitsText;
     fruitsText.setFont(font);
-    fruitsText.setString("Fruits");
+    fruitsText.setString("Fruits ");
     fruitsText.setCharacterSize(24);
     fruitsText.setFillColor(sf::Color::White);
     fruitsText.setPosition(
@@ -702,8 +711,8 @@ int main() {
                         showDifficultyOptions = false;
                     }
                     else if (hardText.getGlobalBounds().contains(mousePos)) {
-                        cellSize = 25.0f;
-                        gridSize = 18;
+                        cellSize = 23.0f;
+                        gridSize = 20;
                         selectedDifficultyName = "Difficile";
                         showDifficultyOptions = false;
                     }
@@ -727,7 +736,10 @@ int main() {
                         score = 0; // Réinitialiser le score
 
                         Grid grid(gridSize, gridSize);
-                        grid.fillWithTheme(selectedTheme, 0.0f); // Pas de cases noires pour l'instant
+                        grid.generateMazeWithMultiplePaths(); // Génère le labyrinthe
+                        grid.fillRandom();
+                        grid.display();
+                        // grid.fillWithTheme(selectedTheme, 0.0f); // Pas de cases noires pour l'instant
                         grid.generateContinuousPath(selectedTheme);
                         showMatrixWindow(window, grid, font, score, selectedTheme, gameClock, foundWords, cellSize);
                         showError = false; // Réinitialiser l'erreur

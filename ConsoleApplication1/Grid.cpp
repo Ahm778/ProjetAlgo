@@ -3,50 +3,57 @@
 #include <ctime>
 #include <algorithm> // Pour std::shuffle
 
-// Structure pour représenter une arête entre deux cellules
-struct Edge {
-    int x1, y1, x2, y2;
-};
-
-// Constructeur de la grille
-Grid::Grid(int r, int c) : rows(r), cols(c), grid(r, std::vector<Node>(c)) {}
-
-// Récupérer un nœud à la position (x, y)
-Node* Grid::getNode(int x, int y) {
-    return &grid[x][y];
-}
-
-// Récupérer le nombre de lignes
-int Grid::getRows() const {
-    return rows;
-}
-
-// Récupérer le nombre de colonnes
-int Grid::getCols() const {
-    return cols;
-}
-
-// Remplir la grille avec des lettres aléatoires
-void Grid::fillRandom() {
+Grid::Grid(int r, int c) : rows(r), cols(c), grid(r, std::vector<Node>(c)) {
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            grid[i][j].letter = 'A' + randomInt(0, 25); // Lettre aléatoire
+            grid[i][j].letter = 'A' + randomInt(0, 25); // Remplir chaque case avec une lettre aléatoire
+            grid[i][j].isBlack = false; // Par défaut, la case n'est pas noire
+            grid[i][j].isSelected = false;
+            grid[i][j].isStart = false;
+            grid[i][j].isEnd = false;
+            grid[i][j].isHint = false;
         }
     }
 }
 
-// Remplir la grille avec un thème de mots
+Node* Grid::getNode(int x, int y) {
+    return &grid[x][y];
+}
+
+int Grid::getRows() const {
+    return rows;
+}
+
+int Grid::getCols() const {
+    return cols;
+}
+
+void Grid::fillRandom() {
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (!grid[i][j].isBlack) { // Ne pas remplir les cases noires
+                grid[i][j].letter = 'A' + randomInt(0, 25); // Lettre aléatoire
+            }
+            else {
+                grid[i][j].letter = ' '; // Remplir les cases noires avec un espace
+            }
+            std::cout << "Case (" << i << ", " << j << ") : " << grid[i][j].letter << std::endl; // Log pour vérifier
+        }
+    }
+}
+
 void Grid::fillWithTheme(const std::vector<std::string>& words, float blackCellProbability) {
     std::string allLetters;
     for (const auto& word : words) {
         allLetters += word;
     }
-
+    //Convertir toutes les lettres en majuscules
     for (char& c : allLetters) {
         c = toupper(c);
     }
+    //Mélanger les lettres
     std::shuffle(allLetters.begin(), allLetters.end(), std::mt19937(std::random_device()()));
-
+    //Remplir la grille avec ces lettres
     int index = 0;
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
@@ -63,12 +70,12 @@ void Grid::fillWithTheme(const std::vector<std::string>& words, float blackCellP
     }
 }
 
-// Générer un labyrinthe avec plusieurs chemins
 void Grid::generateMazeWithMultiplePaths() {
     // Initialiser toutes les cellules comme des murs
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
             grid[i][j].isBlack = true;
+            grid[i][j].letter = ' '; // Remplir les cases noires avec un espace
         }
     }
 
@@ -118,11 +125,19 @@ void Grid::generateMazeWithMultiplePaths() {
             grid[edge.x1][edge.y1].isBlack = false;
             grid[edge.x2][edge.y2].isBlack = false;
             grid[midX][midY].isBlack = false;
+
+            // Remplir les cases ouvertes avec des lettres aléatoires
+            grid[edge.x1][edge.y1].letter = 'A' + randomInt(0, 25);
+            grid[edge.x2][edge.y2].letter = 'A' + randomInt(0, 25);
+            grid[midX][midY].letter = 'A' + randomInt(0, 25);
+
+            std::cout << "Case ouverte (" << edge.x1 << ", " << edge.y1 << ") : " << grid[edge.x1][edge.y1].letter << std::endl; // Log pour vérifier
+            std::cout << "Case ouverte (" << edge.x2 << ", " << edge.y2 << ") : " << grid[edge.x2][edge.y2].letter << std::endl; // Log pour vérifier
+            std::cout << "Case ouverte (" << midX << ", " << midY << ") : " << grid[midX][midY].letter << std::endl; // Log pour vérifier
         }
     }
 }
 
-// Sélectionner 5 mots aléatoires du thème
 std::vector<std::string> Grid::selectRandomWords(const std::vector<std::string>& themeWords, int count) {
     std::vector<std::string> selectedWords = themeWords;
     std::shuffle(selectedWords.begin(), selectedWords.end(), std::mt19937(std::random_device()()));
@@ -132,9 +147,9 @@ std::vector<std::string> Grid::selectRandomWords(const std::vector<std::string>&
     return selectedWords;
 }
 
-// Générer un chemin continu avec seulement 5 mots aléatoires du thème
 void Grid::generateContinuousPath(const std::vector<std::string>& themeWords) {
     validPath.clear();
+    int hintIndex = 0; // Réinitialiser hintIndex
     generateMazeWithMultiplePaths(); // Générer un labyrinthe avec plusieurs chemins
 
     // Sélectionner 5 mots aléatoires du thème
@@ -162,7 +177,6 @@ void Grid::generateContinuousPath(const std::vector<std::string>& themeWords) {
     }
 }
 
-// DFS pour générer un chemin continu
 bool Grid::dfsContinuousPath(int x, int y, const std::string& path, int index) {
     if (index >= path.length()) {
         grid[x][y].isEnd = true;
@@ -196,11 +210,12 @@ bool Grid::dfsContinuousPath(int x, int y, const std::string& path, int index) {
             if (!isAlreadyInPath) {
                 grid[newX][newY].letter = path[index];
                 validPath.push_back(sf::Vector2i(newX, newY));
+                std::cout << "Case visitée (" << newX << ", " << newY << ") : " << grid[newX][newY].letter << std::endl; // Log pour vérifier
                 if (dfsContinuousPath(newX, newY, path, index + 1)) {
                     return true;
                 }
                 validPath.pop_back();
-                grid[newX][newY].letter = '\0';
+                grid[newX][newY].letter = 'A' + randomInt(0, 25); // Remplir avec une lettre aléatoire si le chemin n'est pas valide
             }
         }
     }
@@ -208,14 +223,22 @@ bool Grid::dfsContinuousPath(int x, int y, const std::string& path, int index) {
     return false;
 }
 
-// Récupérer le chemin valide
-const std::vector<sf::Vector2i>& Grid::getValidPath() const {
-    return validPath;
-}
-
-// Générer un nombre entier aléatoire
 int Grid::randomInt(int min, int max) {
     static std::mt19937 gen(static_cast<unsigned int>(std::time(0))); // Utilisez l'heure actuelle comme graine
     std::uniform_int_distribution<> dis(min, max);
     return dis(gen);
+}
+
+void Grid::display() const {
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            if (grid[i][j].isBlack) {
+                std::cout << "# "; // Afficher un caractère spécial pour les cases noires
+            }
+            else {
+                std::cout << grid[i][j].letter << " "; // Afficher la lettre
+            }
+        }
+        std::cout << std::endl;
+    }
 }
