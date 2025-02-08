@@ -3,6 +3,12 @@
 #include <ctime>
 #include <algorithm> // Pour std::shuffle
 
+// Structure pour représenter une arête entre deux cellules
+struct Edge {
+    int x1, y1, x2, y2;
+};
+
+// Constructeur de la grille
 Grid::Grid(int r, int c) : rows(r), cols(c), grid(r, std::vector<Node>(c)) {
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
@@ -16,18 +22,22 @@ Grid::Grid(int r, int c) : rows(r), cols(c), grid(r, std::vector<Node>(c)) {
     }
 }
 
+// Récupérer un nœud à la position (x, y)
 Node* Grid::getNode(int x, int y) {
     return &grid[x][y];
 }
 
+// Récupérer le nombre de lignes
 int Grid::getRows() const {
     return rows;
 }
 
+// Récupérer le nombre de colonnes
 int Grid::getCols() const {
     return cols;
 }
 
+// Remplir la grille avec des lettres aléatoires
 void Grid::fillRandom() {
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
@@ -42,6 +52,7 @@ void Grid::fillRandom() {
     }
 }
 
+// Remplir la grille avec un thème de mots
 void Grid::fillWithTheme(const std::vector<std::string>& words, float blackCellProbability) {
     std::string allLetters;
     for (const auto& word : words) {
@@ -138,6 +149,7 @@ void Grid::generateMazeWithMultiplePaths() {
     }
 }
 
+// Sélectionner 5 mots aléatoires du thème
 std::vector<std::string> Grid::selectRandomWords(const std::vector<std::string>& themeWords, int count) {
     std::vector<std::string> selectedWords = themeWords;
     std::shuffle(selectedWords.begin(), selectedWords.end(), std::mt19937(std::random_device()()));
@@ -147,13 +159,15 @@ std::vector<std::string> Grid::selectRandomWords(const std::vector<std::string>&
     return selectedWords;
 }
 
-void Grid::generateContinuousPath(const std::vector<std::string>& themeWords) {
+// Générer un chemin continu avec seulement 5 mots aléatoires du thème
+void Grid::generateContinuousPath(const std::vector<std::string>& themeWords,int nbWords) {
     validPath.clear();
-    int hintIndex = 0; // Réinitialiser hintIndex
+    int  hintIndex = 0; // Réinitialiser hintIndex
     generateMazeWithMultiplePaths(); // Générer un labyrinthe avec plusieurs chemins
 
     // Sélectionner 5 mots aléatoires du thème
-    std::vector<std::string> selectedWords = selectRandomWords(themeWords, 5);
+	std::vector<std::string> selectedWords = selectRandomWords(themeWords, nbWords
+    );
 
     // Construire le chemin continu avec ces 5 mots
     std::string continuousPath;
@@ -223,6 +237,13 @@ bool Grid::dfsContinuousPath(int x, int y, const std::string& path, int index) {
     return false;
 }
 
+
+// Récupérer le chemin valide
+const std::vector<sf::Vector2i>& Grid::getValidPath() const {
+    return validPath;
+}
+
+// Générer un nombre entier aléatoire
 int Grid::randomInt(int min, int max) {
     static std::mt19937 gen(static_cast<unsigned int>(std::time(0))); // Utilisez l'heure actuelle comme graine
     std::uniform_int_distribution<> dis(min, max);

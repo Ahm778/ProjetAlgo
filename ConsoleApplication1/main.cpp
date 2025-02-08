@@ -7,7 +7,6 @@
 #include <unordered_set>
 #include <stack>
 #include <queue>
-
 #include "Bubbles.hpp"
 #include "Grid.cpp"
 
@@ -128,7 +127,7 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
 }
 
 // Fonction pour afficher la deuxième fenêtre (matrice)
-void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font, int& score, const std::vector<std::string>& themeWords, sf::Clock& gameClock, std::unordered_set<std::string>& foundWords, float cellSize) {
+void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font, int& score, const std::vector<std::string>& themeWords, sf::Clock& gameClock, std::unordered_set<std::string>& foundWords, float cellSize,int nbWords) {
     const int gridSize = grid.getRows();
     const float marginX = (window.getSize().x - gridSize * cellSize) / 2; // Centrer horizontalement
     const float marginY = (window.getSize().y - gridSize * cellSize) / 2 - 100; // Centrer verticalement
@@ -283,7 +282,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                             // Calculer le bonus de temps
                             int timeBonus = 0;
                             if (timeSinceLastWord.asSeconds() <= 20) {
-                                timeBonus = 20 - static_cast<int>(timeSinceLastWord.asSeconds());
+                                timeBonus = 30 - static_cast<int>(timeSinceLastWord.asSeconds());
                             }
 
                             // Pénalité pour les indices utilisés
@@ -321,7 +320,17 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                     }
                 }
 
-                
+                // Gestion du clic sur le bouton "Hint"
+                if (hintButton.getGlobalBounds().contains(mousePos)) {
+                    if (hintIndex < grid.getValidPath().size()) {
+                        auto pos = grid.getValidPath()[hintIndex];
+                        grid.getNode(pos.x, pos.y)->isHint = true;
+                        hintIndex++; // Passer à la prochaine lettre du chemin
+                    }
+                    else {
+                        std::cout << "Tous les mots ont été trouvés !" << std::endl; // Log pour vérifier
+                    }
+                }
 
                 // Gestion du clic sur les cases
                 for (int y = 0; y < gridSize; ++y) {
@@ -379,7 +388,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                 cells[i].setFillColor(sf::Color(204, 153, 255)); // Case d'arrivée en violet pastel
             }
             else if (grid.getNode(x, y)->isHint) {
-                cells[i].setFillColor(sf::Color::Green); // Case indice (vert)
+                cells[i].setFillColor(sf::Color::Transparent); // Case indice (vert)
             }
             else {
                 cells[i].setFillColor(sf::Color(240, 248, 255)); // Case normale
@@ -423,8 +432,8 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
         timerText.setString("Temps: " + std::to_string(seconds) + "s");
         window.draw(timerText);
 
-        // Vérifier si tous les mots ont été trouvés
-        if (foundWords.size() == 5) { //if (foundWords.size() == themeWords.size()) {
+        // Vérifier si tous les mots ont été trouvés + replace 5 with nb words
+        if (foundWords.size() == nbWords) { //if (foundWords.size() == themeWords.size()) {
             int timeElapsed = static_cast<int>(gameClock.getElapsedTime().asSeconds());
             showCongratulationWindow(window, font, score, timeElapsed);
             return; // Retourner au menu principal ou recommencer
@@ -445,6 +454,7 @@ void drawThemeWords(sf::RenderWindow& window, const sf::Font& font, const std::v
 int main() {
     const unsigned int windowWidth = 800;
     const unsigned int windowHeight = 720;
+	int nbWords = 5;
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Jeu de Mots");
 
     // Charger une police
@@ -489,7 +499,7 @@ int main() {
     startButton.setFillColor(sf::Color(70, 130, 180)); // Couleur bleue
     startButton.setPosition(
         static_cast<float>(windowWidth) / 2 - startButton.getSize().x / 2, // Centré horizontalement
-        450 // Position verticale
+        500 // Position verticale
     );
 
     // Texte des boutons
@@ -535,21 +545,9 @@ int main() {
     // Créer la grille
     Grid grid(15, 15);
     // Définir les thèmes
-    std::vector<std::string> fruits = {
-    "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue", "Ananas", "Raisin", "Poire", "Cerise",
-    "Abricot", "Myrtille", "Framboise", "Pastèque", "Melon", "Goyave", "Papaye", "Grenade", "Litchi", "Pêche"
-    };
-
-    std::vector<std::string> pays = {
-     "France", "Tunisie", "Qatar", "Pérou", "Japon", "Canada", "Djibouti", "Cuba", "Brésil", "Espagne",
-     "Italie", "Allemagne", "Maroc", "Russie", "Inde", "Chine", "Mexique", "Portugal", "Égypte", "Turquie"
-    };
-
-    std::vector<std::string> prenoms = {
-    "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Ahmed", "Zeineb", "Asma", "Saif",
-    "Hana", "Omar", "Lina", "Youssef", "Rania", "Jules", "Camille", "Nina", "Leo", "Lucas"
-    };
-
+    std::vector<std::string> fruits = { "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue", "bsal", "besbes", "khorchof", "bousaa" };
+    std::vector<std::string> pays = { "France", "Tunis", "Qatar", "Pero", "Japon", "Canada", "Djibouti", "Cuba" };
+    std::vector<std::string> prenoms = { "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "ahmed", "zeineb", "asma", "saif" };
 
     // Variable pour stocker la difficulté choisie
     float blackCellProbability = 0.0f; // Probabilité de cases noires
@@ -573,7 +571,7 @@ int main() {
     );
     sf::Text fruitsText;
     fruitsText.setFont(font);
-    fruitsText.setString("Fruits ");
+    fruitsText.setString("Fruits");
     fruitsText.setCharacterSize(24);
     fruitsText.setFillColor(sf::Color::White);
     fruitsText.setPosition(
@@ -696,24 +694,27 @@ int main() {
                     }
                 }
 
-                // Sélection d'une difficulté
+                // Sélection d'une difficulté + ajouter le nombre des mot variable global
                 if (showDifficultyOptions) {
                     if (easyText.getGlobalBounds().contains(mousePos)) {
                         cellSize = 40.0f;
                         gridSize = 12;
                         selectedDifficultyName = "Facile";
+						nbWords = 5;
                         showDifficultyOptions = false;
                     }
                     else if (mediumText.getGlobalBounds().contains(mousePos)) {
                         cellSize = 30.0f;
                         gridSize = 15;
                         selectedDifficultyName = "Moyen";
+						nbWords = 6;
                         showDifficultyOptions = false;
                     }
                     else if (hardText.getGlobalBounds().contains(mousePos)) {
-                        cellSize = 23.0f;
+                        cellSize = 24.0f;
                         gridSize = 20;
                         selectedDifficultyName = "Difficile";
+						nbWords = 8;
                         showDifficultyOptions = false;
                     }
 
@@ -740,8 +741,9 @@ int main() {
                         grid.fillRandom();
                         grid.display();
                         // grid.fillWithTheme(selectedTheme, 0.0f); // Pas de cases noires pour l'instant
-                        grid.generateContinuousPath(selectedTheme);
-                        showMatrixWindow(window, grid, font, score, selectedTheme, gameClock, foundWords, cellSize);
+                        //ajouter avec le nombre des mots a generer
+                        grid.generateContinuousPath(selectedTheme,nbWords);
+                        showMatrixWindow(window, grid, font, score, selectedTheme, gameClock, foundWords, cellSize,nbWords);
                         showError = false; // Réinitialiser l'erreur
                     }
                     else {
