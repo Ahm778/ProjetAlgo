@@ -402,7 +402,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                 letterText.setString(std::string(1, grid.getNode(x, y)->letter));
                 letterText.setCharacterSize(18);
                 letterText.setFillColor(sf::Color::Black);
-                letterText.setPosition(cells[i].getPosition().x + 6.0f, cells[i].getPosition().y + 0.0f);
+                letterText.setPosition(cells[i].getPosition().x + 2.0f, cells[i].getPosition().y + -1.5f);
                 window.draw(letterText);
             }
         }
@@ -544,11 +544,18 @@ int main() {
 
     // Créer la grille
     Grid grid(15, 15);
-    // Définir les thèmes
-    std::vector<std::string> fruits = { "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue", "bsal", "besbes", "khorchof", "bousaa" };
-    std::vector<std::string> pays = { "France", "Tunis", "Qatar", "Pero", "Japon", "Canada", "Djibouti", "Cuba" };
-    std::vector<std::string> prenoms = { "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "ahmed", "zeineb", "asma", "saif" };
-
+      std::vector<std::string> fruits = {
+    "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue", "Ananas", "Raisin", "Poire", "Cerise",
+    "Abricot", "Myrtille", "Framboise", "Pastèque", "Melon", "Goyave", "Papaye", "Grenade", "Litchi", "Pêche"
+    };
+    std::vector<std::string> pays = {
+     "France", "Tunisie", "Qatar", "Pérou", "Japon", "Canada", "Djibouti", "Cuba", "Brésil", "Espagne",
+     "Italie", "Allemagne", "Maroc", "Russie", "Inde", "Chine", "Mexique", "Portugal", "Égypte", "Turquie"
+    };
+    std::vector<std::string> prenoms = {
+    "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Ahmed", "Zeineb", "Asma", "Saif",
+    "Hana", "Omar", "Lina", "Youssef", "Rania", "Jules", "Camille", "Nina", "Leo", "Lucas"
+    }; 
     // Variable pour stocker la difficulté choisie
     float blackCellProbability = 0.0f; // Probabilité de cases noires
     // Variable pour stocker le nom de la difficulté choisie
@@ -697,24 +704,24 @@ int main() {
                 // Sélection d'une difficulté + ajouter le nombre des mot variable global
                 if (showDifficultyOptions) {
                     if (easyText.getGlobalBounds().contains(mousePos)) {
-                        cellSize = 40.0f;
-                        gridSize = 12;
+                        cellSize = 30.0f;
+                        gridSize = 14;
                         selectedDifficultyName = "Facile";
 						nbWords = 5;
                         showDifficultyOptions = false;
                     }
                     else if (mediumText.getGlobalBounds().contains(mousePos)) {
-                        cellSize = 30.0f;
-                        gridSize = 15;
+                        cellSize = 24.0f;
+                        gridSize = 19;
                         selectedDifficultyName = "Moyen";
 						nbWords = 6;
                         showDifficultyOptions = false;
                     }
                     else if (hardText.getGlobalBounds().contains(mousePos)) {
-                        cellSize = 24.0f;
-                        gridSize = 20;
+                        cellSize = 20.0f;
+                        gridSize = 24;
                         selectedDifficultyName = "Difficile";
-						nbWords = 8;
+						nbWords = 10;
                         showDifficultyOptions = false;
                     }
 
