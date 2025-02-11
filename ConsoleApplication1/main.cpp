@@ -312,6 +312,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                         }
                     }
 
+                    // Dans la fonction showMatrixWindow, après la validation d'un mot
                     if (isValid) {
                         // Vérifier si le mot a déjà été trouvé
                         if (foundWords.find(upperCurrentWord) == foundWords.end()) {
@@ -346,6 +347,9 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
 
                             // Mettre à jour hintIndex pour pointer vers le début du prochain mot
                             hintIndex += upperCurrentWord.length(); // Avancer hintIndex de la longueur du mot valid
+
+                            // Debugging: Afficher le score et les mots trouvés
+                            std::cout << "Mot trouvé: " << upperCurrentWord << ", Score: " << score << ", Mots trouvés: " << foundWords.size() << std::endl;
                         }
 
                         // Colorer les cases sélectionnées en vert
@@ -475,7 +479,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
         timerText.setString("Temps: " + std::to_string(seconds) + "s");
         window.draw(timerText);
 
-        // Vérifier si tous les mots ont été trouvés + replace 5 with nb words
+        // Vérifier si tous les mots ont été trouvés
         if (foundWords.size() == nbWords) { //if (foundWords.size() == themeWords.size()) {
             int timeElapsed = static_cast<int>(gameClock.getElapsedTime().asSeconds());
             showCongratulationWindow(window, font, score, timeElapsed);
