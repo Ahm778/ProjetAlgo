@@ -3,11 +3,6 @@
 #include <ctime>
 #include <algorithm> // Pour std::shuffle
 
-// Structure pour représenter une arête entre deux cellules
-struct Edge {
-    int x1, y1, x2, y2;
-};
-
 // Constructeur de la grille
 Grid::Grid(int r, int c) : rows(r), cols(c), grid(r, std::vector<Node>(c)) {
     for (int i = 0; i < rows; ++i) {
@@ -58,13 +53,13 @@ void Grid::fillWithTheme(const std::vector<std::string>& words, float blackCellP
     for (const auto& word : words) {
         allLetters += word;
     }
-    //Convertir toutes les lettres en majuscules
+    // Convertir toutes les lettres en majuscules
     for (char& c : allLetters) {
         c = toupper(c);
     }
-    //Mélanger les lettres
+    // Mélanger les lettres
     std::shuffle(allLetters.begin(), allLetters.end(), std::mt19937(std::random_device()()));
-    //Remplir la grille avec ces lettres
+    // Remplir la grille avec ces lettres
     int index = 0;
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
@@ -160,14 +155,13 @@ std::vector<std::string> Grid::selectRandomWords(const std::vector<std::string>&
 }
 
 // Générer un chemin continu avec seulement 5 mots aléatoires du thème
-void Grid::generateContinuousPath(const std::vector<std::string>& themeWords,int nbWords) {
+void Grid::generateContinuousPath(const std::vector<std::string>& themeWords, int nbWords) {
     validPath.clear();
-    int  hintIndex = 0; // Réinitialiser hintIndex
+    int hintIndex = 0; // Réinitialiser hintIndex
     generateMazeWithMultiplePaths(); // Générer un labyrinthe avec plusieurs chemins
 
     // Sélectionner 5 mots aléatoires du thème
-	std::vector<std::string> selectedWords = selectRandomWords(themeWords, nbWords
-    );
+    std::vector<std::string> selectedWords = selectRandomWords(themeWords, nbWords);
 
     // Construire le chemin continu avec ces 5 mots
     std::string continuousPath;
@@ -237,7 +231,6 @@ bool Grid::dfsContinuousPath(int x, int y, const std::string& path, int index) {
     return false;
 }
 
-
 // Récupérer le chemin valide
 const std::vector<sf::Vector2i>& Grid::getValidPath() const {
     return validPath;
@@ -262,4 +255,50 @@ void Grid::display() const {
         }
         std::cout << std::endl;
     }
+}
+
+// Fonction Dijkstra pour trouver le plus court chemin
+std::vector<sf::Vector2i> Grid::dijkstra(int startX, int startY, int endX, int endY) {
+    std::vector<std::vector<int>> distances(rows, std::vector<int>(cols, INT_MAX));
+    std::vector<std::vector<sf::Vector2i>> previous(rows, std::vector<sf::Vector2i>(cols, sf::Vector2i(-1, -1)));
+    std::priority_queue<DijkstraNode, std::vector<DijkstraNode>, std::greater<>> pq;
+
+    distances[startX][startY] = 0;
+    pq.emplace(startX, startY, 0);
+
+    std::vector<std::pair<int, int>> directions = {
+        {-1, -1}, {-1, 0}, {-1, 1},
+        {0, -1},          {0, 1},
+        {1, -1},  {1, 0}, {1, 1}
+    };
+
+    while (!pq.empty()) {
+        DijkstraNode current = pq.top();
+        pq.pop();
+
+        if (current.x == endX && current.y == endY) {
+            break;
+        }
+
+        for (const auto& dir : directions) {
+            int newX = current.x + dir.first;
+            int newY = current.y + dir.second;
+
+            if (newX >= 0 && newX < rows && newY >= 0 && newY < cols && !grid[newX][newY].isBlack) {
+                int newDistance = current.distance + 1;
+                if (newDistance < distances[newX][newY]) {
+                    distances[newX][newY] = newDistance;
+                    previous[newX][newY] = sf::Vector2i(current.x, current.y);
+                    pq.emplace(newX, newY, newDistance);
+                }
+            }
+        }
+    }
+
+    std::vector<sf::Vector2i> path;
+    for (sf::Vector2i at(endX, endY); at != sf::Vector2i(-1, -1); at = previous[at.x][at.y]) {
+        path.push_back(at);
+    }
+    std::reverse(path.begin(), path.end());
+    return path;
 }

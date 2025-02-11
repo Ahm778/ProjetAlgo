@@ -251,6 +251,49 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                 // Gestion du clic sur le bouton "Valider"
                 if (validateButton.getGlobalBounds().contains(mousePos)) {
                     // Convertir le mot sélectionné en majuscules
+                       // ken 3andi  l 1er case w last case ; nchouf longueur =? langueur de plus courte chemin wala le : ken yes ==> valid
+                    //code yacin
+                    if (validateButton.getGlobalBounds().contains(mousePos)) {
+                        // Vérifier si la première et la dernière case sont bien le début et la fin du chemin
+                        auto start = selectedLetters.begin();
+                        auto end = std::prev(selectedLetters.end());
+                        bool isStartNode = grid.getNode(start->x, start->y)->isStart;
+                        bool isEndNode = grid.getNode(end->x, end->y)->isEnd;
+
+                        if (isStartNode && isEndNode) {
+                            // Calculer le plus court chemin entre le début et la fin
+                            std::vector<sf::Vector2i> shortestPath = grid.dijkstra(start->x, start->y, end->x, end->y);
+                            int shortestPathLength = shortestPath.size();
+                            int selectedPathLength = selectedLetters.size();
+
+                            // Calculer le score en fonction de la longueur du chemin sélectionné
+                            if (selectedPathLength == shortestPathLength) {
+                                std::cout << "Plus court chemin" << std::endl;
+                                score += 50; // Ajouter 50 points si le chemin est le plus court
+                            }
+                            else {
+                                int extraSteps = selectedPathLength - shortestPathLength;
+                                score += 50 - 2 * extraSteps; // Ajouter 50 points et soustraire 2 points par case supplémentaire
+                                std::cout << "Pas le plus court chemin" << std::endl;
+                            }
+
+                            // Désélectionner le chemin sélectionné
+                            for (const auto& pos : selectedLetters) {
+                                grid.getNode(pos.x, pos.y)->isSelected = false;
+                            }
+                            selectedLetters.clear();
+                            currentWord.clear();
+                            wordText.setString("");
+
+                            // Colorer le plus court chemin en gris (sans utiliser isHint)
+                          
+
+                            // Réinitialiser le temps de validation du dernier mot
+                            lastWordValidationTime = sf::Time::Zero;
+                        }
+                    }
+                    //code yacin wfe ;
+
                     std::string upperCurrentWord = currentWord;
                     for (char& c : upperCurrentWord) {
                         c = toupper(c);
@@ -707,7 +750,7 @@ int main() {
                         cellSize = 30.0f;
                         gridSize = 14;
                         selectedDifficultyName = "Facile";
-						nbWords = 5;
+						nbWords = 4;
                         showDifficultyOptions = false;
                     }
                     else if (mediumText.getGlobalBounds().contains(mousePos)) {
@@ -721,7 +764,7 @@ int main() {
                         cellSize = 20.0f;
                         gridSize = 24;
                         selectedDifficultyName = "Difficile";
-						nbWords = 10;
+						nbWords = 8;
                         showDifficultyOptions = false;
                     }
 

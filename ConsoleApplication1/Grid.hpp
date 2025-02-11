@@ -8,6 +8,8 @@
 #include <random>
 #include <algorithm>
 #include <chrono>
+#include <queue>
+#include <utility> // Pour std::pair
 
 // Structure pour représenter une case dans la grille
 struct Node {
@@ -19,7 +21,23 @@ struct Node {
     bool isHint = false;    // Si la case est un indice
 };
 
+// Structure pour Dijkstra
+struct DijkstraNode {
+    int x, y;
+    int distance;
+    DijkstraNode(int x, int y, int distance) : x(x), y(y), distance(distance) {}
+    bool operator>(const DijkstraNode& other) const {
+        return distance > other.distance;
+    }
+};
+
+// Structure pour représenter une arête dans le labyrinthe
+struct Edge {
+    int x1, y1, x2, y2;
+};
+
 // Classe pour représenter la grille
+// Dans Grid.hpp
 class Grid {
 private:
     int rows, cols;
@@ -47,6 +65,9 @@ public:
     void generateMazeWithMultiplePaths();
     // Fonction pour afficher la grille dans la console
     void display() const;
+
+    // Fonction pour trouver le plus court chemin avec Dijkstra
+    std::vector<sf::Vector2i> dijkstra(int startX, int startY, int endX, int endY);
 };
 
 #endif // GRID_HPP
