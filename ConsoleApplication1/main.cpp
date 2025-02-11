@@ -127,7 +127,7 @@ void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, in
 }
 
 // Fonction pour afficher la deuxième fenêtre (matrice)
-void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font, int& score, const std::vector<std::string>& themeWords, sf::Clock& gameClock, std::unordered_set<std::string>& foundWords, float cellSize,int nbWords) {
+void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font, int& score, const std::vector<std::string>& themeWords, sf::Clock& gameClock, std::unordered_set<std::string>& foundWords, float cellSize, int nbWords) {
     const int gridSize = grid.getRows();
     const float marginX = (window.getSize().x - gridSize * cellSize) / 2; // Centrer horizontalement
     const float marginY = (window.getSize().y - gridSize * cellSize) / 2 - 100; // Centrer verticalement
@@ -277,6 +277,28 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                                 std::cout << "Pas le plus court chemin" << std::endl;
                             }
 
+                            // Réinitialiser le temps de validation du dernier mot
+                            lastWordValidationTime = sf::Time::Zero;
+
+                            // Mettre à jour l'affichage du temps
+                            timerText.setString("Temps: 0s");
+
+                            // Afficher le score bonus
+                            int timeBonus = 0;
+                            sf::Time currentTime = gameClock.getElapsedTime();
+                            sf::Time timeSinceLastWord = currentTime - lastWordValidationTime;
+
+                            if (timeSinceLastWord.asSeconds() <= 20) {
+                                timeBonus = 20 - static_cast<int>(timeSinceLastWord.asSeconds());
+                            }
+
+                            int hintPenalty = hintIndex * 2;
+                            int wordScore = (selectedPathLength * 3) + timeBonus - hintPenalty;
+                            wordScore = std::max(wordScore, 0);
+
+                            score += wordScore;
+                            scoreText.setString("Score: " + std::to_string(score));
+
                             // Désélectionner le chemin sélectionné
                             for (const auto& pos : selectedLetters) {
                                 grid.getNode(pos.x, pos.y)->isSelected = false;
@@ -286,10 +308,9 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                             wordText.setString("");
 
                             // Colorer le plus court chemin en gris (sans utiliser isHint)
-                          
-
-                            // Réinitialiser le temps de validation du dernier mot
-                            lastWordValidationTime = sf::Time::Zero;
+                            for (const auto& pos : shortestPath) {
+                                grid.getNode(pos.x, pos.y)->isHint = true;
+                            }
                         }
                     }
                     //code yacin wfe ;
@@ -326,7 +347,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                             // Calculer le bonus de temps
                             int timeBonus = 0;
                             if (timeSinceLastWord.asSeconds() <= 20) {
-                                timeBonus = 30 - static_cast<int>(timeSinceLastWord.asSeconds());
+                                timeBonus = 20 - static_cast<int>(timeSinceLastWord.asSeconds());
                             }
 
                             // Pénalité pour les indices utilisés
@@ -344,12 +365,6 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
 
                             // Mettre à jour le temps de validation du dernier mot
                             lastWordValidationTime = currentTime;
-
-                            // Mettre à jour hintIndex pour pointer vers le début du prochain mot
-                            hintIndex += upperCurrentWord.length(); // Avancer hintIndex de la longueur du mot valid
-
-                            // Debugging: Afficher le score et les mots trouvés
-                            std::cout << "Mot trouvé: " << upperCurrentWord << ", Score: " << score << ", Mots trouvés: " << foundWords.size() << std::endl;
                         }
 
                         // Colorer les cases sélectionnées en vert
@@ -490,6 +505,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
         window.display();
     }
 }
+
 // Fonction pour afficher les mots du thème
 void drawThemeWords(sf::RenderWindow& window, const sf::Font& font, const std::vector<std::string>& words, float x, float y) {
     sf::Text themeTitle;
@@ -498,10 +514,122 @@ void drawThemeWords(sf::RenderWindow& window, const sf::Font& font, const std::v
     themeTitle.setFillColor(sf::Color::White);
     themeTitle.setPosition(x, y);
 }
+
+void showIntroductionWindow(sf::RenderWindow& window, const sf::Font& font, const std::string& text, int page) {
+    const unsigned int windowWidth = 800;
+    const unsigned int windowHeight = 720;
+
+    // Créer une nouvelle fenêtre pour l'introduction
+    sf::RenderWindow introWindow(sf::VideoMode(windowWidth, windowHeight), "Introduction");
+
+    // Texte d'introduction
+    sf::Text introText;
+    introText.setFont(font);
+    introText.setString(text);
+    introText.setCharacterSize(65); // Taille initiale augmentée
+    introText.setFillColor(sf::Color::White);
+    introText.setStyle(sf::Text::Bold);
+
+    // Ajuster la taille du texte pour qu'il tienne dans la fenêtre
+    float maxTextWidth = windowWidth - 80; // Marge de 50 pixels de chaque côté
+    while (introText.getLocalBounds().width > maxTextWidth && introText.getCharacterSize() > 20) {
+        introText.setCharacterSize(introText.getCharacterSize() - 1); // Réduire la taille du texte
+    }
+
+    // Centrer le texte horizontalement et le déplacer un peu plus haut verticalement
+    introText.setPosition(
+        static_cast<float>(windowWidth) / 2 - introText.getLocalBounds().width / 2, // Centré horizontalement
+        static_cast<float>(windowHeight) / 2 - introText.getLocalBounds().height / 2 - 70 // Déplacé 50 pixels plus haut
+    );
+
+    // Bouton "Skip"
+    sf::RectangleShape skipButton(sf::Vector2f(200, 50));
+    skipButton.setFillColor(sf::Color(204, 153, 255)); // Couleur bleue bbbb
+    skipButton.setPosition(
+        static_cast<float>(windowWidth) / 2 - skipButton.getSize().x / 2, // Centré horizontalement
+        500 // Position verticale
+    );
+    skipButton.setOutlineThickness(2.f);
+    skipButton.setOutlineColor(sf::Color(75, 0, 130));
+
+    sf::Text skipButtonText;
+    skipButtonText.setFont(font);
+    skipButtonText.setString("Skip");
+    skipButtonText.setCharacterSize(24);
+    skipButtonText.setFillColor(sf::Color(75, 0, 130));
+    skipButtonText.setPosition(
+        skipButton.getPosition().x + 70,
+        skipButton.getPosition().y + 10
+    );
+
+    // Effet de dégradé animé
+    sf::Clock gradientClock;
+    float gradientPhase = 0.0f;
+
+    // Bulles flottantes
+    std::vector<Bubble> bubbles = createBubbles(20, introWindow.getSize());
+
+    // Boucle principale de la fenêtre d'introduction
+    while (introWindow.isOpen()) {
+        sf::Event event;
+        while (introWindow.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                introWindow.close();
+            }
+
+            // Gestion des clics sur les boutons
+            if (event.type == sf::Event::MouseButtonPressed) {
+                sf::Vector2f mousePos = introWindow.mapPixelToCoords(sf::Mouse::getPosition(introWindow));
+                // Bouton "Skip"
+                if (skipButton.getGlobalBounds().contains(mousePos)) {
+                    introWindow.close();
+                    return; // Retourner au menu principal
+                }
+            }
+        }
+
+        // Mettre à jour le dégradé animé
+        float gradientTime = gradientClock.getElapsedTime().asSeconds();
+        gradientPhase = std::sin(gradientTime * 0.5f) * 0.5f + 0.5f; // Oscillation entre 0 et 1
+
+        // Effacer l'écran avec un dégradé de couleurs animé
+        sf::VertexArray background(sf::Quads, 4);
+        background[0].position = sf::Vector2f(0.0f, 0.0f);
+        background[1].position = sf::Vector2f(static_cast<float>(windowWidth), 0);
+        background[2].position = sf::Vector2f(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
+        background[3].position = sf::Vector2f(0, static_cast<float>(windowHeight));
+        background[0].color = sf::Color(100, 150, static_cast<sf::Uint8>(200 * gradientPhase));
+        background[1].color = sf::Color(100, 150, static_cast<sf::Uint8>(200 * gradientPhase));
+        background[2].color = sf::Color(200, 100, static_cast<sf::Uint8>(150 * gradientPhase));
+        background[3].color = sf::Color(200, 100, static_cast<sf::Uint8>(150 * gradientPhase));
+        introWindow.draw(background);
+
+        // Mettre à jour et dessiner les bulles
+        updateBubbles(bubbles, introWindow.getSize(), 0.001f); // 0.016f pour ~60 FPS
+        for (const auto& bubble : bubbles) {
+            introWindow.draw(bubble.shape);
+        }
+
+        // Dessiner les textes
+        introWindow.draw(introText);
+
+        // Effet de texte pulsé
+        float textScale = 1.0f + std::sin(gradientTime * 2.0f) * 0.1f; // Pulsation légère
+        introText.setScale(textScale, textScale);
+
+        // Dessiner les boutons
+        introWindow.draw(skipButton);
+        introWindow.draw(skipButtonText);
+
+        // Afficher à l'écran
+        introWindow.display();
+    }
+}
+
 int main() {
     const unsigned int windowWidth = 800;
     const unsigned int windowHeight = 720;
-	int nbWords = 5;
+    int nbWords = 5;
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Jeu de Mots");
 
     // Charger une police
@@ -510,6 +638,43 @@ int main() {
         std::cerr << "Erreur: Impossible de charger la police Roboto.ttf" << std::endl;
         return -1;
     }
+    // Afficher les fenêtres d'introduction
+    showIntroductionWindow(window, font,
+        "Bienvenue dans le jeu de mots !\n\n"
+        "Votre mission est de trouver des mots cachés dans une grille de lettres.\n"
+        "Ces mots appartiennent à un thème que vous aurez choisi, comme les fruits,\n"
+        "les pays ou les prénoms.\n\n"
+        "Explorez la grille, sélectionnez les lettres et formez des mots pour marquer\n"
+        "des points. Êtes-vous prêt à relever le défi ?",
+        1);
+
+    showIntroductionWindow(window, font,
+        "Comment jouer :\n\n"
+        "1. Utilisez votre souris pour sélectionner les lettres dans la grille.\n"
+        "2. Les lettres doivent être adjacentes (horizontalement, verticalement\n"
+        "   ou en diagonale).\n"
+        "3. Formez un mot valide en sélectionnant les lettres dans l'ordre.\n"
+        "4. Cliquez sur 'Valider' pour vérifier si le mot est correct.\n\n"
+        "Astuce : Les mots doivent appartenir au thème choisi. Soyez attentif !",
+        2);
+
+    showIntroductionWindow(window, font,
+        "Besoin d'aide ? Utilisez les indices !\n\n"
+        "Si vous êtes bloqué, cliquez sur le bouton 'Hint' pour obtenir un indice.\n"
+        "L'indice vous montrera la prochaine lettre d'un mot à trouver.\n\n"
+        "Attention : Utiliser des indices réduit légèrement votre score final.\n"
+        "Alors, utilisez-les avec parcimonie !",
+        3);
+
+    showIntroductionWindow(window, font,
+        "Objectifs et score :\n\n"
+        "- Trouvez tous les mots du thème pour gagner la partie.\n"
+        "- Votre score dépend de la longueur des mots trouvés et de la rapidité\n"
+        "  avec laquelle vous les trouvez.\n"
+        "- Bonus : Trouvez les mots rapidement pour gagner des points supplémentaires.\n"
+        "- Pénalité : Utiliser des indices réduit votre score.\n\n"
+        "Le chronomètre est lancé ! À vous de jouer !",
+        4);
 
     // Couleurs d'arrière-plan
     sf::Color backgroundColorStart = sf::Color(100, 150, 200); // Début du dégradé
@@ -588,10 +753,9 @@ int main() {
     float cellSize = 0.0f;
     int gridSize = 0;
 
-
     // Créer la grille
     Grid grid(15, 15);
-      std::vector<std::string> fruits = {
+    std::vector<std::string> fruits = {
     "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue", "Ananas", "Raisin", "Poire", "Cerise",
     "Abricot", "Myrtille", "Framboise", "Pastèque", "Melon", "Goyave", "Papaye", "Grenade", "Litchi", "Pêche"
     };
@@ -602,7 +766,7 @@ int main() {
     std::vector<std::string> prenoms = {
     "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Ahmed", "Zeineb", "Asma", "Saif",
     "Hana", "Omar", "Lina", "Youssef", "Rania", "Jules", "Camille", "Nina", "Leo", "Lucas"
-    }; 
+    };
     // Variable pour stocker la difficulté choisie
     float blackCellProbability = 0.0f; // Probabilité de cases noires
     // Variable pour stocker le nom de la difficulté choisie
@@ -754,21 +918,21 @@ int main() {
                         cellSize = 30.0f;
                         gridSize = 14;
                         selectedDifficultyName = "Facile";
-						nbWords = 4;
+                        nbWords = 4;
                         showDifficultyOptions = false;
                     }
                     else if (mediumText.getGlobalBounds().contains(mousePos)) {
                         cellSize = 24.0f;
                         gridSize = 19;
                         selectedDifficultyName = "Moyen";
-						nbWords = 6;
+                        nbWords = 6;
                         showDifficultyOptions = false;
                     }
                     else if (hardText.getGlobalBounds().contains(mousePos)) {
                         cellSize = 20.0f;
                         gridSize = 24;
                         selectedDifficultyName = "Difficile";
-						nbWords = 8;
+                        nbWords = 8;
                         showDifficultyOptions = false;
                     }
 
@@ -796,8 +960,8 @@ int main() {
                         grid.display();
                         // grid.fillWithTheme(selectedTheme, 0.0f); // Pas de cases noires pour l'instant
                         //ajouter avec le nombre des mots a generer
-                        grid.generateContinuousPath(selectedTheme,nbWords);
-                        showMatrixWindow(window, grid, font, score, selectedTheme, gameClock, foundWords, cellSize,nbWords);
+                        grid.generateContinuousPath(selectedTheme, nbWords);
+                        showMatrixWindow(window, grid, font, score, selectedTheme, gameClock, foundWords, cellSize, nbWords);
                         showError = false; // Réinitialiser l'erreur
                     }
                     else {
