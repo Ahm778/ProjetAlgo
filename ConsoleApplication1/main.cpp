@@ -269,11 +269,11 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                             // Calculer le score en fonction de la longueur du chemin sélectionné
                             if (selectedPathLength == shortestPathLength) {
                                 std::cout << "Plus court chemin" << std::endl;
-                                score += 50; // Ajouter 50 points si le chemin est le plus court
+                                score = 50; // Ajouter 50 points si le chemin est le plus court
                             }
                             else {
                                 int extraSteps = selectedPathLength - shortestPathLength;
-                                score += 50 - 2 * extraSteps; // Ajouter 50 points et soustraire 2 points par case supplémentaire
+                                score = 50 - 5 * extraSteps; // Ajouter 50 points et soustraire 2 points par case supplémentaire
                                 std::cout << "Pas le plus court chemin" << std::endl;
                             }
 
@@ -308,9 +308,9 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
                             wordText.setString("");
 
                             // Colorer le plus court chemin en gris (sans utiliser isHint)
-                            for (const auto& pos : shortestPath) {
-                                grid.getNode(pos.x, pos.y)->isHint = true;
-                            }
+                            //for (const auto& pos : shortestPath) {
+                             //   grid.getNode(pos.x, pos.y)->isHint = true;
+                           // }
                         }
                     }
                     //code yacin wfe ;
@@ -697,7 +697,7 @@ int main() {
     themeButton.setFillColor(sf::Color(70, 130, 180)); // Couleur bleue
     themeButton.setPosition(
         static_cast<float>(windowWidth) / 2 - themeButton.getSize().x / 2, // Centré horizontalement
-        250 // Position verticale
+        200 // Position verticale
     );
 
     sf::RectangleShape difficultyButton(sf::Vector2f(300, 50));
