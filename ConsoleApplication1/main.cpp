@@ -365,6 +365,7 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
 
                             // Mettre à jour le temps de validation du dernier mot
                             lastWordValidationTime = currentTime;
+                            hintIndex += upperCurrentWord.length();
                         }
 
                         // Colorer les cases sélectionnées en vert

@@ -42,7 +42,6 @@ void Grid::fillRandom() {
             else {
                 grid[i][j].letter = ' '; // Remplir les cases noires avec un espace
             }
-            std::cout << "Case (" << i << ", " << j << ") : " << grid[i][j].letter << std::endl; // Log pour vérifier
         }
     }
 }
@@ -137,9 +136,6 @@ void Grid::generateMazeWithMultiplePaths() {
             grid[edge.x2][edge.y2].letter = 'A' + randomInt(0, 25);
             grid[midX][midY].letter = 'A' + randomInt(0, 25);
 
-            std::cout << "Case ouverte (" << edge.x1 << ", " << edge.y1 << ") : " << grid[edge.x1][edge.y1].letter << std::endl; // Log pour vérifier
-            std::cout << "Case ouverte (" << edge.x2 << ", " << edge.y2 << ") : " << grid[edge.x2][edge.y2].letter << std::endl; // Log pour vérifier
-            std::cout << "Case ouverte (" << midX << ", " << midY << ") : " << grid[midX][midY].letter << std::endl; // Log pour vérifier
         }
     }
 }
@@ -218,7 +214,7 @@ bool Grid::dfsContinuousPath(int x, int y, const std::string& path, int index) {
             if (!isAlreadyInPath) {
                 grid[newX][newY].letter = path[index];
                 validPath.push_back(sf::Vector2i(newX, newY));
-                std::cout << "Case visitée (" << newX << ", " << newY << ") : " << grid[newX][newY].letter << std::endl; // Log pour vérifier
+               
                 if (dfsContinuousPath(newX, newY, path, index + 1)) {
                     return true;
                 }
