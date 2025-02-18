@@ -20,12 +20,10 @@ Grid::Grid(int r, int c) : rows(r), cols(c), grid(r, std::vector<Node>(c)) {
 Node* Grid::getNode(int x, int y) {
     return &grid[x][y];
 }
-
 // Récupérer le nombre de lignes
 int Grid::getRows() const {
     return rows;
 }
-
 // Récupérer le nombre de colonnes
 int Grid::getCols() const {
     return cols;
@@ -169,9 +167,7 @@ bool Grid::dfsContinuousPath(int x, int y, const std::string& path, int index) {
     }
 
     std::vector<std::pair<int, int>> directions = {
-        {-1, -1}, {-1, 0}, {-1, 1},
-        {0, -1},          {0, 1},
-        {1, -1},  {1, 0}, {1, 1}
+       {-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1,1}
     };
 
     // Mélanger les directions
@@ -225,15 +221,11 @@ std::vector<sf::Vector2i> Grid::dijkstra(int startX, int startY, int endX, int e
     std::vector<std::vector<int>> distances(rows, std::vector<int>(cols, INT_MAX));
     std::vector<std::vector<sf::Vector2i>> previous(rows, std::vector<sf::Vector2i>(cols, sf::Vector2i(-1, -1)));
     std::priority_queue<DijkstraNode, std::vector<DijkstraNode>, std::greater<>> pq;
-
     distances[startX][startY] = 0;
     pq.emplace(startX, startY, 0);
-
     std::vector<std::pair<int, int>> directions = {
-        {-1, -1}, {-1, 0}, {-1, 1},
-        {0, -1},          {0, 1},
-        {1, -1},  {1, 0}, {1, 1}
-    };
+     {-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}
+};
 
     while (!pq.empty()) {
         DijkstraNode current = pq.top();

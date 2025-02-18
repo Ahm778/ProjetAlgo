@@ -7,8 +7,27 @@
 #include <unordered_set>
 #include <stack>
 #include <queue>
+#include <fstream>
 #include "Bubbles.hpp"
 #include "Grid.cpp"
+
+// Fonction pour charger les mots d'un fichier texte
+std::vector<std::string> loadWordsFromFile(const std::string& filename) {
+    std::vector<std::string> words;
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Erreur: Impossible d'ouvrir le fichier " << filename << std::endl;
+        return words;
+    }
+    std::string word;
+    while (std::getline(file, word)) {
+        if (!word.empty()) {
+            words.push_back(word);
+        }
+    }
+    file.close();
+    return words;
+}
 
 // Fonction pour afficher la fenêtre de félicitations
 void showCongratulationWindow(sf::RenderWindow& window, const sf::Font& font, int score, int timeElapsed) {
@@ -638,6 +657,12 @@ int main() {
         std::cerr << "Erreur: Impossible de charger la police Roboto.ttf" << std::endl;
         return -1;
     }
+
+    // Charger les mots des thèmes à partir des fichiers texte
+    std::vector<std::string> fruits = loadWordsFromFile("fruits.txt");
+    std::vector<std::string> pays = loadWordsFromFile("pays.txt");
+    std::vector<std::string> prenoms = loadWordsFromFile("prenoms.txt");
+
     // Afficher les fenêtres d'introduction
     showIntroductionWindow(window, font,
         "Bienvenue dans le jeu de mots !\n\n"
@@ -753,20 +778,6 @@ int main() {
     float cellSize = 0.0f;
     int gridSize = 0;
 
-    // Créer la grille
-    Grid grid(15, 15);
-    std::vector<std::string> fruits = {
-    "Pomme", "Banane", "Orange", "Fraise", "Kiwi", "Mangue", "Ananas", "Raisin", "Poire", "Cerise",
-    "Abricot", "Myrtille", "Framboise", "Pastèque", "Melon", "Goyave", "Papaye", "Grenade", "Litchi", "Pêche"
-    };
-    std::vector<std::string> pays = {
-     "France", "Tunisie", "Qatar", "Pérou", "Japon", "Canada", "Djibouti", "Cuba", "Brésil", "Espagne",
-     "Italie", "Allemagne", "Maroc", "Russie", "Inde", "Chine", "Mexique", "Portugal", "Égypte", "Turquie"
-    };
-    std::vector<std::string> prenoms = {
-    "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Ahmed", "Zeineb", "Asma", "Saif",
-    "Hana", "Omar", "Lina", "Youssef", "Rania", "Jules", "Camille", "Nina", "Leo", "Lucas"
-    };
     // Variable pour stocker la difficulté choisie
     float blackCellProbability = 0.0f; // Probabilité de cases noires
     // Variable pour stocker le nom de la difficulté choisie
@@ -956,8 +967,8 @@ int main() {
 
                         Grid grid(gridSize, gridSize);
                         grid.generateMazeWithMultiplePaths(); // Génère le labyrinthe
-                      
-                       
+
+
                         // grid.fillWithTheme(selectedTheme, 0.0f); // Pas de cases noires pour l'instant
                         //ajouter avec le nombre des mots a generer
                         grid.generateContinuousPath(selectedTheme, nbWords);
