@@ -51,7 +51,7 @@ public:
     int getRows() const;
     int getCols() const;
 
-    void fillRandom();
+    
     void fillWithTheme(const std::vector<std::string>& words, float blackCellProbability);
     void generateContinuousPath(const std::vector<std::string>& themeWords, int nbWords);
     bool dfsContinuousPath(int x, int y, const std::string& path, int index);
@@ -64,7 +64,7 @@ public:
     // Fonction pour générer un labyrinthe avec plusieurs chemins
     void generateMazeWithMultiplePaths();
     // Fonction pour afficher la grille dans la console
-    void display() const;
+   
 
     // Fonction pour trouver le plus court chemin avec Dijkstra
     std::vector<sf::Vector2i> dijkstra(int startX, int startY, int endX, int endY);

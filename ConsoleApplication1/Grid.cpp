@@ -7,7 +7,6 @@
 Grid::Grid(int r, int c) : rows(r), cols(c), grid(r, std::vector<Node>(c)) {
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
-            grid[i][j].letter = 'A' + randomInt(0, 25); // Remplir chaque case avec une lettre aléatoire
             grid[i][j].isBlack = false; // Par défaut, la case n'est pas noire
             grid[i][j].isSelected = false;
             grid[i][j].isStart = false;
@@ -32,29 +31,11 @@ int Grid::getCols() const {
     return cols;
 }
 
-// Remplir la grille avec des lettres aléatoires
-void Grid::fillRandom() {
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            if (!grid[i][j].isBlack) { // Ne pas remplir les cases noires
-                grid[i][j].letter = 'A' + randomInt(0, 25); // Lettre aléatoire
-            }
-            else {
-                grid[i][j].letter = ' '; // Remplir les cases noires avec un espace
-            }
-        }
-    }
-}
-
 // Remplir la grille avec un thème de mots
 void Grid::fillWithTheme(const std::vector<std::string>& words, float blackCellProbability) {
     std::string allLetters;
     for (const auto& word : words) {
         allLetters += word;
-    }
-    // Convertir toutes les lettres en majuscules
-    for (char& c : allLetters) {
-        c = toupper(c);
     }
     // Mélanger les lettres
     std::shuffle(allLetters.begin(), allLetters.end(), std::mt19937(std::random_device()()));
@@ -237,20 +218,6 @@ int Grid::randomInt(int min, int max) {
     static std::mt19937 gen(static_cast<unsigned int>(std::time(0))); // Utilisez l'heure actuelle comme graine
     std::uniform_int_distribution<> dis(min, max);
     return dis(gen);
-}
-
-void Grid::display() const {
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            if (grid[i][j].isBlack) {
-                std::cout << "# "; // Afficher un caractère spécial pour les cases noires
-            }
-            else {
-                std::cout << grid[i][j].letter << " "; // Afficher la lettre
-            }
-        }
-        std::cout << std::endl;
-    }
 }
 
 // Fonction Dijkstra pour trouver le plus court chemin

@@ -365,7 +365,6 @@ void showMatrixWindow(sf::RenderWindow& window, Grid& grid, const sf::Font& font
 
                             // Mettre à jour le temps de validation du dernier mot
                             lastWordValidationTime = currentTime;
-                            hintIndex += upperCurrentWord.length();
                         }
 
                         // Colorer les cases sélectionnées en vert
@@ -795,7 +794,7 @@ int main() {
     fruitsText.setFillColor(sf::Color::White);
     fruitsText.setPosition(
         themeOptionsBackground.getPosition().x + 50,
-        themeOptionsBackground.getPosition().y + 20
+        themeOptionsBackground.getPosition().y + 0
     );
     sf::Text paysText;
     paysText.setFont(font);
@@ -804,7 +803,7 @@ int main() {
     paysText.setFillColor(sf::Color::White);
     paysText.setPosition(
         themeOptionsBackground.getPosition().x + 50,
-        themeOptionsBackground.getPosition().y + 60
+        themeOptionsBackground.getPosition().y + 40
     );
     sf::Text prenomsText;
     prenomsText.setFont(font);
@@ -813,7 +812,7 @@ int main() {
     prenomsText.setFillColor(sf::Color::White);
     prenomsText.setPosition(
         themeOptionsBackground.getPosition().x + 50,
-        themeOptionsBackground.getPosition().y + 100
+        themeOptionsBackground.getPosition().y + 80
     );
     sf::Text easyText;
     easyText.setFont(font);
@@ -957,8 +956,8 @@ int main() {
 
                         Grid grid(gridSize, gridSize);
                         grid.generateMazeWithMultiplePaths(); // Génère le labyrinthe
-                        grid.fillRandom();
-                        grid.display();
+                      
+                       
                         // grid.fillWithTheme(selectedTheme, 0.0f); // Pas de cases noires pour l'instant
                         //ajouter avec le nombre des mots a generer
                         grid.generateContinuousPath(selectedTheme, nbWords);
